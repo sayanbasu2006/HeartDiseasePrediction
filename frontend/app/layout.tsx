@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./interface.css";
 import { Provider } from "@/components/provider";
 export const metadata: Metadata = {
   title: "CardioLens AI · A clearer view of heart health",
@@ -12,11 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
+    <html lang="en" data-theme="light" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t='dark';try{if(localStorage.getItem('cardiolens-theme-v2')==='light')t='light'}catch(e){}document.documentElement.dataset.theme=t})()`,
+            __html: `(function(){var t='light';try{if(localStorage.getItem('cardiolens-theme-v2')==='dark')t='dark'}catch(e){}document.documentElement.dataset.theme=t})()`,
           }}
         />
       </head>
