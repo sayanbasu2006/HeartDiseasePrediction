@@ -1,0 +1,105 @@
+{
+  "source_url": "https://archive.ics.uci.edu/dataset/45/heart+disease",
+  "download_url": "https://archive.ics.uci.edu/static/public/45/heart+disease.zip",
+  "source_member": "processed.cleveland.data",
+  "source_sha256": "a74b7efa387bc9d108d7d0115d831fe9b414b29ae7124f331b622b4efa0427c8",
+  "local_sha256": "7c3014365675306819510a49ff289efbec1d1a6a666a2dc7652f1547b383d859",
+  "matched_local_rows": 303,
+  "method": "Match on eight unchanged fields, then require unanimous agreement for every observed transformed category. Match labels to the original diagnosis field. Duplicate local records are retained for this audit.",
+  "mappings": {
+    "cp": {
+      "0": {
+        "uci_value": 4,
+        "matching_rows": 143
+      },
+      "1": {
+        "uci_value": 2,
+        "matching_rows": 50
+      },
+      "2": {
+        "uci_value": 3,
+        "matching_rows": 87
+      },
+      "3": {
+        "uci_value": 1,
+        "matching_rows": 23
+      }
+    },
+    "restecg": {
+      "0": {
+        "uci_value": 2,
+        "matching_rows": 147
+      },
+      "1": {
+        "uci_value": 0,
+        "matching_rows": 152
+      },
+      "2": {
+        "uci_value": 1,
+        "matching_rows": 4
+      }
+    },
+    "slope": {
+      "0": {
+        "uci_value": 3,
+        "matching_rows": 21
+      },
+      "1": {
+        "uci_value": 2,
+        "matching_rows": 140
+      },
+      "2": {
+        "uci_value": 1,
+        "matching_rows": 142
+      }
+    },
+    "ca": {
+      "0": {
+        "uci_value": 0,
+        "matching_rows": 175
+      },
+      "1": {
+        "uci_value": 1,
+        "matching_rows": 65
+      },
+      "2": {
+        "uci_value": 2,
+        "matching_rows": 38
+      },
+      "3": {
+        "uci_value": 3,
+        "matching_rows": 20
+      },
+      "4": {
+        "uci_value": null,
+        "matching_rows": 5
+      }
+    },
+    "thal": {
+      "0": {
+        "uci_value": null,
+        "matching_rows": 2
+      },
+      "1": {
+        "uci_value": 6,
+        "matching_rows": 18
+      },
+      "2": {
+        "uci_value": 3,
+        "matching_rows": 166
+      },
+      "3": {
+        "uci_value": 7,
+        "matching_rows": 117
+      }
+    }
+  },
+  "target_meanings": {
+    "0": "Disease present in source diagnosis",
+    "1": "No disease in source diagnosis"
+  },
+  "missing_markers": {
+    "ca": 4,
+    "thal": 0
+  }
+}

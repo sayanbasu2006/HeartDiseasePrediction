@@ -1,0 +1,432 @@
+{
+  "version": "uci-cleveland-verified-v1",
+  "source_url": "https://archive.ics.uci.edu/dataset/45/heart+disease",
+  "fields": [
+    {
+      "key": "age",
+      "label": "Age",
+      "group": 0,
+      "help": "Age at the time of your recorded examination.",
+      "unit": "years",
+      "min": 18,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "key": "sex",
+      "label": "Sex",
+      "group": 0,
+      "help": "Use the sex recorded for this assessment. This model supports male and female records only.",
+      "codes": [
+        0,
+        1
+      ],
+      "options": [
+        {
+          "value": 1,
+          "label": "Male",
+          "supported": true,
+          "aliases": [
+            "m"
+          ]
+        },
+        {
+          "value": 0,
+          "label": "Female",
+          "supported": true,
+          "aliases": [
+            "f"
+          ]
+        },
+        {
+          "value": -1,
+          "label": "Other / not listed",
+          "supported": false,
+          "aliases": [
+            "other",
+            "not listed"
+          ]
+        },
+        {
+          "value": -2,
+          "label": "Prefer not to say",
+          "supported": false,
+          "aliases": []
+        }
+      ],
+      "validationMessage": "This model was trained only on male and female records. Other or undisclosed selections cannot be assessed; you can still use measurement tracking."
+    },
+    {
+      "key": "trestbps",
+      "label": "Resting blood pressure",
+      "group": 1,
+      "help": "The resting systolic (upper) blood-pressure measurement in your report.",
+      "unit": "mmHg",
+      "min": 70,
+      "max": 250,
+      "step": 1
+    },
+    {
+      "key": "chol",
+      "label": "Cholesterol",
+      "group": 1,
+      "help": "Enter your recorded serum cholesterol measurement.",
+      "unit": "mg/dL",
+      "min": 80,
+      "max": 650,
+      "step": 1
+    },
+    {
+      "key": "fbs",
+      "label": "Is fasting blood sugar above 120 mg/dL?",
+      "group": 1,
+      "help": "Choose based on a recorded fasting test. This asks whether the value exceeds 120 mg/dL, not for the glucose reading itself.",
+      "codes": [
+        0,
+        1
+      ],
+      "options": [
+        {
+          "value": 0,
+          "label": "No — 120 mg/dL or below",
+          "supported": true,
+          "aliases": [
+            "no",
+            "false",
+            "at or below 120"
+          ]
+        },
+        {
+          "value": 1,
+          "label": "Yes — above 120 mg/dL",
+          "supported": true,
+          "aliases": [
+            "yes",
+            "true",
+            "above 120"
+          ]
+        },
+        {
+          "value": -1,
+          "label": "I don’t know / not in my report",
+          "supported": false,
+          "aliases": [
+            "unknown",
+            "not sure"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "thalach",
+      "label": "Maximum exercise heart rate",
+      "group": 1,
+      "help": "The highest heart rate recorded during the exercise test, not your resting pulse.",
+      "unit": "bpm",
+      "min": 40,
+      "max": 230,
+      "step": 1
+    },
+    {
+      "key": "exang",
+      "label": "Angina during exercise",
+      "group": 1,
+      "help": "Use the exercise-induced angina finding in your clinical report. Do not guess from symptoms alone.",
+      "codes": [
+        0,
+        1
+      ],
+      "options": [
+        {
+          "value": 0,
+          "label": "No",
+          "supported": true,
+          "aliases": [
+            "false"
+          ]
+        },
+        {
+          "value": 1,
+          "label": "Yes",
+          "supported": true,
+          "aliases": [
+            "true"
+          ]
+        },
+        {
+          "value": -1,
+          "label": "I don’t know / not in my report",
+          "supported": false,
+          "aliases": [
+            "unknown",
+            "not sure"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "oldpeak",
+      "label": "ST depression on exercise ECG",
+      "group": 1,
+      "help": "Enter the ST-depression value from your exercise ECG report. Ask your clinician if you are unsure.",
+      "unit": "report value",
+      "min": 0,
+      "max": 10,
+      "step": 0.1
+    },
+    {
+      "key": "cp",
+      "label": "Chest pain type",
+      "group": 2,
+      "help": "Choose the classification in your clinician’s report. These terms describe recorded clinical categories.",
+      "codes": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "options": [
+        {
+          "value": 3,
+          "label": "Typical angina",
+          "supported": true,
+          "aliases": []
+        },
+        {
+          "value": 1,
+          "label": "Atypical angina",
+          "supported": true,
+          "aliases": []
+        },
+        {
+          "value": 2,
+          "label": "Non-anginal chest pain",
+          "supported": true,
+          "aliases": [
+            "non-anginal pain"
+          ]
+        },
+        {
+          "value": 0,
+          "label": "No symptoms (asymptomatic)",
+          "supported": true,
+          "aliases": [
+            "asymptomatic",
+            "no symptoms"
+          ]
+        },
+        {
+          "value": -1,
+          "label": "I don’t know / not in my report",
+          "supported": false,
+          "aliases": [
+            "unknown",
+            "not sure"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "restecg",
+      "label": "Resting ECG result",
+      "group": 2,
+      "help": "Select the resting ECG finding from your report. LVH means a possible heart-muscle enlargement pattern.",
+      "codes": [
+        0,
+        1,
+        2
+      ],
+      "options": [
+        {
+          "value": 1,
+          "label": "Normal ECG",
+          "supported": true,
+          "aliases": [
+            "normal"
+          ]
+        },
+        {
+          "value": 2,
+          "label": "ST–T wave changes",
+          "supported": true,
+          "aliases": [
+            "st-t wave changes",
+            "st-t wave abnormality"
+          ]
+        },
+        {
+          "value": 0,
+          "label": "Possible enlargement (LVH)",
+          "supported": true,
+          "aliases": [
+            "lvh",
+            "left ventricular hypertrophy",
+            "Possible heart-muscle enlargement (LVH)"
+          ]
+        },
+        {
+          "value": -1,
+          "label": "I don’t know / not in my report",
+          "supported": false,
+          "aliases": [
+            "unknown",
+            "not sure"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "slope",
+      "label": "ST-segment slope during exercise",
+      "group": 2,
+      "help": "The direction of the ST segment at peak exercise, as recorded in the exercise ECG report.",
+      "codes": [
+        0,
+        1,
+        2
+      ],
+      "options": [
+        {
+          "value": 2,
+          "label": "Upward slope",
+          "supported": true,
+          "aliases": [
+            "upsloping"
+          ]
+        },
+        {
+          "value": 1,
+          "label": "Flat slope",
+          "supported": true,
+          "aliases": [
+            "flat"
+          ]
+        },
+        {
+          "value": 0,
+          "label": "Downward slope",
+          "supported": true,
+          "aliases": [
+            "downsloping"
+          ]
+        },
+        {
+          "value": -1,
+          "label": "I don’t know / not in my report",
+          "supported": false,
+          "aliases": [
+            "unknown",
+            "not sure"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "ca",
+      "label": "Major vessels visible on imaging",
+      "group": 2,
+      "help": "Use the number of major vessels recorded on fluoroscopy. “Not available” means the measurement is missing.",
+      "codes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "options": [
+        {
+          "value": 0,
+          "label": "None",
+          "supported": true,
+          "aliases": [
+            "zero"
+          ]
+        },
+        {
+          "value": 1,
+          "label": "One vessel",
+          "supported": true,
+          "aliases": [
+            "one"
+          ]
+        },
+        {
+          "value": 2,
+          "label": "Two vessels",
+          "supported": true,
+          "aliases": [
+            "two"
+          ]
+        },
+        {
+          "value": 3,
+          "label": "Three vessels",
+          "supported": true,
+          "aliases": [
+            "three"
+          ]
+        },
+        {
+          "value": 4,
+          "label": "Not available",
+          "supported": false,
+          "aliases": [
+            "unknown",
+            "missing"
+          ]
+        }
+      ],
+      "validationMessage": "A recorded vessel count is required. “Not available” is a missing measurement, not a count of four."
+    },
+    {
+      "key": "thal",
+      "label": "Stress-test blood-flow result",
+      "group": 2,
+      "help": "Use the thallium/perfusion test result in your report. Your clinician should interpret any reported defect.",
+      "codes": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "options": [
+        {
+          "value": 2,
+          "label": "Normal blood-flow result",
+          "supported": true,
+          "aliases": [
+            "normal",
+            "normal perfusion"
+          ]
+        },
+        {
+          "value": 1,
+          "label": "Fixed blood-flow defect",
+          "supported": true,
+          "aliases": [
+            "fixed defect"
+          ]
+        },
+        {
+          "value": 3,
+          "label": "Reversible blood-flow defect",
+          "supported": true,
+          "aliases": [
+            "reversible defect",
+            "reversable defect"
+          ]
+        },
+        {
+          "value": 0,
+          "label": "Not available",
+          "supported": false,
+          "aliases": [
+            "unknown",
+            "missing"
+          ]
+        }
+      ],
+      "validationMessage": "A recorded stress-test result is required. “Not available” is a missing test result and cannot be assessed."
+    }
+  ]
+}
