@@ -6,7 +6,7 @@ This is an educational research platform, not a diagnosis, treatment tool, or cl
 
 ## Run locally
 
-Python 3.12 and Node.js 20.9+ are required. The included artifacts were trained with scikit-learn 1.5.2. Use only trusted joblib files.
+Python 3.12 and Node.js 20.9+ are required.
 
 From this project folder:
 
