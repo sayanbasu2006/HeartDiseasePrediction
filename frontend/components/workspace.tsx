@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState, ReactNode } from "react";
+import { useEffect, useRef, useState, ReactNode } from "react";
 import {
   HeartPulse,
   LayoutDashboard,
@@ -28,16 +28,15 @@ import {
   FlaskConical,
   SlidersHorizontal,
   Search,
-  Heart,
   AlertCircle,
   Loader2,
   CheckCircle2,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDropzone } from "react-dropzone";
+import { BeatingHeart } from "./beating-heart";
 import { Button } from "./ui/button";
 import { ChoiceGroup } from "./ui/choice-group";
 import { Trend, Distribution, Contributions } from "./charts";
@@ -56,49 +55,45 @@ import {
   scorePercent,
 } from "@/lib/api";
 const navigation = [
+  ["home", "Start here", Activity],
   ["dashboard", "Overview", LayoutDashboard],
   ["predict", "New assessment", HeartPulse],
   ["upload", "Upload data", Upload],
-  ["history", "Health timeline", History],
   ["insights", "Insights", Lightbulb],
   ["models", "Model laboratory", Layers],
   ["reports", "Reports", FileText],
 ] as const;
 const titles: Record<string, [string, string]> = {
-  home: [
-    "A clearer view of your heart.",
-    "Explore your measurements, understand model results, and follow changes over time.",
-  ],
   dashboard: [
-    "Your health at a glance.",
+    "Workspace overview",
     "Your latest assessment, recorded measurements, and trends — together in one place.",
   ],
   predict: [
-    "Your measurements, explained.",
+    "New assessment",
     "A guided assessment with transparent results and a clear view of the model’s reasoning.",
   ],
   upload: [
-    "Bring your records into focus.",
-    "Upload a file, review its measurements, and choose prediction or timeline analysis.",
+    "Upload data",
+    "Choose what you want to do, then upload a CSV or JSON file.",
   ],
   history: [
-    "See how your measurements change.",
+    "Health timeline",
     "Explore recorded observations, patterns, and changes over time.",
   ],
   insights: [
-    "Understand what shapes a result.",
+    "Data and model insights",
     "Explore the data and the ideas behind your results.",
   ],
   models: [
-    "Look inside the model.",
-    "Real validation results. Transparent methods. Honest limitations.",
+    "Model laboratory",
+    "Compare classifiers on the same development folds and inspect the selected model’s holdout results.",
   ],
   reports: [
-    "Your assessment, ready to share.",
+    "Assessment reports",
     "Export a clear, portable summary of your latest assessment.",
   ],
   about: [
-    "Clarity starts with transparency.",
+    "About the research",
     "The data, methodology, and boundaries of CardioLens AI.",
   ],
 };
@@ -188,7 +183,7 @@ function ECG() {
   );
 }
 export function Workspace({ section }: { section: string }) {
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(false);
   const [menu, setMenu] = useState(false);
   const [mobile, setMobile] = useState(false);
   const health = useResource("/health");
@@ -221,6 +216,9 @@ export function Workspace({ section }: { section: string }) {
   }
   return (
     <div className="app">
+      <a className="skip-link" href="#workspace-content">
+        Skip to content
+      </a>
       <aside
         id="workspace-navigation"
         inert={mobile && !menu}
@@ -229,53 +227,36 @@ export function Workspace({ section }: { section: string }) {
       >
         <Link href="/" className="brand">
           <span className="brand-icon">
-            <HeartPulse size={25} />
+            <HeartPulse size={21} strokeWidth={1.8} />
           </span>
           <span>
             CardioLens <b>AI</b>
-            <small>HEART HEALTH INTELLIGENCE</small>
+            <small>RESEARCH WORKSPACE</small>
           </span>
         </Link>
-        <div className="nav-caption">YOUR WORKSPACE</div>
-        <nav>
-          {navigation.map(([key, label, Icon]) => (
-            <Link
-              onClick={() => setMenu(false)}
-              key={key}
-              href={`/${key}`}
-              className={section === key ? "active" : ""}
-              aria-current={section === key ? "page" : undefined}
-            >
-              <Icon size={19} />
-              {label}
-              {key === "predict" && <span className="nav-plus">+</span>}
-            </Link>
+        <nav aria-label="Workspace">
+          {[
+            { label: "Workspace", links: navigation.slice(0, 2) },
+            { label: "Measurements", links: navigation.slice(2, 4) },
+            { label: "Research", links: navigation.slice(4) },
+          ].map(({ label, links }) => (
+            <div className="nav-group" key={label}>
+              <div className="nav-caption">{label}</div>
+              {links.map(([key, title, Icon]) => (
+                <Link
+                  onClick={() => setMenu(false)}
+                  key={key}
+                  href={key === "home" ? "/" : `/${key}`}
+                  className={section === key ? "active" : ""}
+                  aria-current={section === key ? "page" : undefined}
+                >
+                  <Icon size={17} strokeWidth={1.8} />
+                  {title}
+                </Link>
+              ))}
+            </div>
           ))}
         </nav>
-        <div className="sidebar-bottom">
-          <div className="privacy-card">
-            <ShieldCheck size={20} />
-            <strong>Private by design</strong>
-            <p>
-              Your measurements stay on this computer. You choose what to save.
-            </p>
-          </div>
-          <Link
-            className={section === "about" ? "about-link active" : "about-link"}
-            href="/about"
-          >
-            <Info size={18} />
-            About & methodology
-            <ArrowUpRight size={14} />
-          </Link>
-          <div className="local-profile">
-            <span>CL</span>
-            <div>
-              Local workspace<small>No account required</small>
-            </div>
-            <span className="status-dot" />
-          </div>
-        </div>
       </aside>
       {menu && (
         <button
@@ -284,7 +265,7 @@ export function Workspace({ section }: { section: string }) {
           onClick={() => setMenu(false)}
         />
       )}
-      <main>
+      <main id="workspace-content" tabIndex={-1}>
         <header className="topbar">
           <div className="breadcrumbs">
             <button
@@ -296,12 +277,13 @@ export function Workspace({ section }: { section: string }) {
             >
               {menu ? <X size={21} /> : <Menu size={21} />}
             </button>
-            <span>Workspace</span>
+            <span>CardioLens</span>
             <ChevronRight size={13} />
             <strong>
               {section === "home"
-                ? "Welcome"
-                : navigation.find((n) => n[0] === section)?.[1] || "About"}
+                ? "Start here"
+                : navigation.find((n) => n[0] === section)?.[1] ||
+                  (section === "history" ? "Health timeline" : "About")}
             </strong>
           </div>
           <div className="top-actions">
@@ -323,35 +305,26 @@ export function Workspace({ section }: { section: string }) {
             >
               {dark ? <Sun size={19} /> : <Moon size={19} />}
             </button>
-            <span className="avatar">CL</span>
           </div>
         </header>
-        <div className="page">
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow">
-                <span /> HEART HEALTH, IN FOCUS
+        <div className={section === "home" ? "page landing-page" : "page"}>
+          {section !== "home" && (
+            <div className="page-heading">
+              <div>
+                <div className="eyebrow">Cardiac research workspace</div>
+                <h1>{titles[section][0]}</h1>
+                <p>{titles[section][1]}</p>
               </div>
-              <h1>
-                {titles[section][0].slice(
-                  0,
-                  titles[section][0].lastIndexOf(" ") + 1,
-                )}
-                <span className="heading-accent">
-                  {titles[section][0].split(" ").at(-1)}
-                </span>
-              </h1>
-              <p>{titles[section][1]}</p>
+              {section === "dashboard" && (
+                <Button asChild>
+                  <Link href="/predict">
+                    <Plus size={17} />
+                    New assessment
+                  </Link>
+                </Button>
+              )}
             </div>
-            {section === "dashboard" && (
-              <Button asChild>
-                <Link href="/predict">
-                  <Plus size={17} />
-                  New assessment
-                </Link>
-              </Button>
-            )}
-          </div>
+          )}
           {section === "home" ? (
             <Landing />
           ) : section === "dashboard" ? (
@@ -371,13 +344,6 @@ export function Workspace({ section }: { section: string }) {
           ) : (
             <About />
           )}
-          <footer>
-            <span>
-              <HeartPulse size={14} />
-              Built for understanding. Designed with care.
-            </span>
-            <span>Experimental research · Not a medical diagnosis</span>
-          </footer>
         </div>
       </main>
     </div>
@@ -386,18 +352,19 @@ export function Workspace({ section }: { section: string }) {
 function Landing() {
   return (
     <>
-      <div className="hero">
-        <div className="hero-copy">
-          <span className="pill">
-            <span className="status-dot" /> MEET CARDIOLENS AI
+      <section className="landing-intro" aria-labelledby="landing-title">
+        <div className="landing-copy">
+          <span className="eyebrow">
+            <Activity size={15} /> Cardiac machine learning
           </span>
-          <h2>
-            Your heart.
-            <br />A clearer <em>perspective.</em>
-          </h2>
+          <h1 id="landing-title">
+            A clearer view
+            <br />
+            of <em>cardiac data.</em>
+          </h1>
           <p>
-            Turn complex measurements into understandable insights. Explore
-            transparent predictions and see your health data over time.
+            Run an explainable assessment, trace measurements over time, and see
+            how the models perform on real research data.
           </p>
           <div className="row">
             <Button asChild>
@@ -406,97 +373,71 @@ function Landing() {
                 <ArrowRight size={17} />
               </Link>
             </Button>
-            <Link className="text-link" href="/dashboard">
-              Explore workspace
-              <ArrowUpRight size={16} />
+            <Link className="text-link" href="/models">
+              Compare models <ArrowUpRight size={16} />
             </Link>
           </div>
-          <div className="hero-notes">
-            <span>
-              <ShieldCheck size={15} />
-              Local & private
-            </span>
-            <span>
-              <FlaskConical size={15} />
-              Real machine learning
-            </span>
-          </div>
         </div>
-        <div className="heart-art">
-          <div className="orbit one" />
-          <div className="orbit two" />
-          <div className="heart-core">
-            <HeartPulse size={116} strokeWidth={0.9} />
-          </div>
-          <div className="art-label label-top">
-            <span className="status-dot" />
-            Built on real measurements
-          </div>
-          <div className="art-label label-bottom">
-            <Activity size={17} />
-            <div>
-              See beyond a single number
-              <small>Explain. Explore. Understand.</small>
-            </div>
-          </div>
-          <ECG />
+        <BeatingHeart />
+      </section>
+      <section className="launch-section" aria-labelledby="launch-title">
+        <div className="launch-heading">
+          <h2 id="launch-title">Explore the workspace</h2>
+          <span className="eyebrow">Three ways to begin</span>
         </div>
-      </div>
-      <div className="section-label">
-        <span>YOUR NEXT STEP</span>
-        <span>A connected view, from input to insight</span>
-      </div>
-      <div className="grid three">
-        {[
-          {
-            icon: HeartPulse,
-            title: "Understand a result",
-            text: "A guided assessment with transparent model explanations.",
-            href: "/predict",
-            tag: "01 / ASSESS",
-          },
-          {
-            icon: Upload,
-            title: "Connect your records",
-            text: "Review, map, and validate your CSV or JSON measurements.",
-            href: "/upload",
-            tag: "02 / BRING DATA",
-          },
-          {
-            icon: History,
-            title: "See the bigger picture",
-            text: "Explore trends and experimental measurement patterns.",
-            href: "/history",
-            tag: "03 / EXPLORE",
-          },
-        ].map((x) => (
-          <Link className="card action-card" href={x.href} key={x.title}>
-            <div className="row between">
-              <span className="tile-icon">
-                <x.icon size={22} />
-              </span>
-              <ArrowUpRight size={20} />
-            </div>
-            <small>{x.tag}</small>
-            <h3>{x.title}</h3>
-            <p>{x.text}</p>
-          </Link>
-        ))}
-      </div>
-      <div className="note">
-        <ShieldCheck size={20} />
+        <div className="grid three launch-grid">
+          {[
+            {
+              icon: HeartPulse,
+              title: "Run an assessment",
+              text: "Enter 13 clinical inputs and see which features shaped the model’s result.",
+              href: "/predict",
+              tag: "01",
+            },
+            {
+              icon: Upload,
+              title: "Bring your own data",
+              text: "Map and validate CSV or JSON records before running an analysis.",
+              href: "/upload",
+              tag: "02",
+            },
+            {
+              icon: History,
+              title: "Explore a timeline",
+              text: "Follow trends in recorded measurements or try the sample sequence.",
+              href: "/history",
+              tag: "03",
+            },
+          ].map((x) => (
+            <Link className="card launch-card" href={x.href} key={x.title}>
+              <div className="row between">
+                <span className="tile-icon">
+                  <x.icon size={19} />
+                </span>
+                <span className="launch-number">
+                  {x.tag} <ArrowUpRight size={16} />
+                </span>
+              </div>
+              <h3>{x.title}</h3>
+              <p>{x.text}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+      <section className="research-band" aria-labelledby="research-title">
+        <FlaskConical size={23} />
         <div>
-          <strong>Insight with clear boundaries.</strong>
+          <h2 id="research-title">From dataset to result</h2>
           <p>
-            CardioLens is an educational research platform. Predictions describe
-            a dataset label and cannot confirm or exclude heart disease.
+            See how the classifiers were trained and evaluated. Assessments are
+            for education and research and cannot diagnose heart disease.
           </p>
         </div>
-        <Link href="/about">
-          Our methodology
+        <Link className="text-link" href="/about">
+          Read the methodology
           <ArrowUpRight size={15} />
         </Link>
-      </div>
+      </section>
     </>
   );
 }
@@ -514,12 +455,9 @@ function Dashboard() {
     <>
       <div className="overview-banner">
         <div>
-          <span className="pill">YOUR PERSONAL PERSPECTIVE</span>
-          <h2>
-            Small observations.
-            <br />A more complete picture.
-          </h2>
-          <p>Bring your measurements into focus, one record at a time.</p>
+          <span className="overline">Measurement history</span>
+          <h2>Track changes over time</h2>
+          <p>Review your recorded readings and their filtered trends.</p>
           <Link href="/history" className="text-link">
             View health timeline
             <ArrowRight size={16} />
@@ -733,28 +671,26 @@ function Stat({
   );
 }
 function Score({ result }: { result: any }) {
+  const score = diseaseScore(result);
   return (
-    <div className="score-wrap">
+    <div className="score-readout">
       {result.demonstration && (
         <span className="badge warning">Dataset demonstration</span>
       )}
-      <div
-        className="score-circle"
-        style={{
-          background: `conic-gradient(var(--teal) ${diseaseScore(result) * 360}deg, var(--border) 0deg)`,
-        }}
-      >
-        <div>
-          <strong>
-            {(diseaseScore(result) * 100).toFixed(1)}
-            <small>%</small>
-          </strong>
-          <span>DISEASE-PATTERN SCORE</span>
-        </div>
+      <span className="overline">Disease-present class score</span>
+      <div className="score-value">
+        <strong>{(score * 10).toFixed(2)}</strong>
+        <span> / 10</span>
       </div>
-      <strong>{result.class_description}</strong>
-      <p>{result.score_label}</p>
-      <span className="badge warning">Not your personal medical risk</span>
+      <meter
+        min={0}
+        max={10}
+        value={score * 10}
+        aria-label="Disease-present class score"
+        aria-valuetext={`${(score * 10).toFixed(2)} out of 10`}
+      />
+      <strong className="score-class">{result.class_description}</strong>
+      <p>Experimental model output for the research dataset.</p>
     </div>
   );
 }
@@ -777,7 +713,7 @@ const patientShape: Record<string, z.ZodType> = Object.fromEntries(
 );
 const patientSchema = z.object(patientShape);
 function Prediction() {
-  const { latest, setLatest } = useSession();
+  const { setLatest } = useSession();
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -787,6 +723,7 @@ function Prediction() {
     resolver: zodResolver(patientSchema) as any,
   });
   const selectedValues = form.watch();
+  const formHeading = useRef<HTMLHeadingElement>(null);
   async function next() {
     const group = fields.filter((f) => f.group === step).map((f) => f.key);
     if (await form.trigger(group)) {
@@ -808,17 +745,26 @@ function Prediction() {
     }
   }
   async function exampleLoad() {
+    setBusy(true);
+    setError("");
     try {
       const r = await api("/example");
       form.reset(r.measurements);
       setExample(true);
+      setStep(3);
     } catch (e: any) {
       setError(e.message);
+    } finally {
+      setBusy(false);
     }
   }
+  useEffect(() => {
+    if (step > 0) formHeading.current?.focus();
+  }, [step]);
   if (result)
     return (
       <Result
+        key={result.timestamp}
         result={result}
         example={example}
         onReset={() => {
@@ -829,6 +775,17 @@ function Prediction() {
     );
   return (
     <>
+      {step === 0 && (
+        <div className="workflow-callout">
+          <div>
+            <strong>Just exploring?</strong>
+            <p>Load an example and go straight to the review step.</p>
+          </div>
+          <Button variant="outline" onClick={exampleLoad} disabled={busy}>
+            <FlaskConical size={16} /> Load dataset example
+          </Button>
+        </div>
+      )}
       {example && (
         <div className="demo-banner">
           <FlaskConical size={18} />
@@ -867,7 +824,7 @@ function Prediction() {
           >
             <div className="form-title">
               <span className="overline">STEP {step + 1} OF 4</span>
-              <h2>
+              <h2 ref={formHeading} tabIndex={-1}>
                 {
                   [
                     "Start with patient details",
@@ -993,12 +950,6 @@ function Prediction() {
                     internally to the model’s verified input format.
                   </p>
                 </div>
-                {example && (
-                  <div className="demo-banner">
-                    Dataset example loaded for demonstration. This is not your
-                    personal record.
-                  </div>
-                )}
               </>
             )}
             <ErrorBox message={error} />
@@ -1059,17 +1010,6 @@ function Prediction() {
               <ArrowUpRight size={14} />
             </Link>
           </Card>
-          <Card>
-            <span className="overline">PRESENTATION MODE</span>
-            <h3>Try a dataset example</h3>
-            <p>
-              Load a clearly labeled record from the supplied training dataset.
-              This is a demonstration, not a personal assessment.
-            </p>
-            <Button variant="outline" onClick={exampleLoad}>
-              Load dataset example
-            </Button>
-          </Card>
         </div>
       </div>
     </>
@@ -1084,55 +1024,55 @@ function Result({
   example: boolean;
   onReset: () => void;
 }) {
-  const [values, setValues] = useState({ ...result.measurements });
-  const [comparison, setComparison] = useState<{
-    key: string;
-    result: any;
-  } | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [retry, setRetry] = useState(0);
-  const originalKey = JSON.stringify(result.measurements);
-  const currentKey = JSON.stringify(values);
-  const changed = currentKey !== originalKey;
-  const currentResult = !changed
-    ? result
-    : comparison?.key === currentKey
-      ? comparison.result
-      : null;
-  const difference = currentResult
-    ? (diseaseScore(currentResult) - diseaseScore(result)) * 100
+  const [scenario, setScenario] = useState<{
+    values: Record<string, number>;
+    prediction?: Parameters<typeof diseaseScore>[0] & {
+      class_description: string;
+      limitations: string[];
+    };
+    error?: string;
+  }>(() => ({ values: result.measurements }));
+  const { values, prediction, error = "" } = scenario;
+  const changed = Object.keys(values).some(
+    (key) => values[key] !== result.measurements[key],
+  );
+  const currentResult = changed ? prediction : result;
+  const busy = changed && !prediction && !error;
+  const originalPercent = scorePercent(diseaseScore(result));
+  const hypotheticalPercent = currentResult
+    ? scorePercent(diseaseScore(currentResult))
+    : null;
+  const difference = hypotheticalPercent
+    ? Number.parseFloat(hypotheticalPercent) -
+      Number.parseFloat(originalPercent)
     : null;
   useEffect(() => {
-    if (currentKey === originalKey) {
-      setComparison(null);
-      setError("");
-      setBusy(false);
-      return;
-    }
-    let active = true;
+    if (!changed) return;
     const controller = new AbortController();
-    setBusy(true);
-    setError("");
-    setComparison(null);
     const timer = setTimeout(() => {
-      post("/predict", JSON.parse(currentKey), { signal: controller.signal })
-        .then((value) => {
-          if (active) setComparison({ key: currentKey, result: value });
+      post("/predict", values, { signal: controller.signal })
+        .then((prediction) => {
+          if (controller.signal.aborted) return;
+          setScenario((current) =>
+            current.values === values ? { values, prediction } : current,
+          );
         })
-        .catch((e) => {
-          if (active && !controller.signal.aborted) setError(e.message);
-        })
-        .finally(() => {
-          if (active) setBusy(false);
+        .catch((reason: unknown) => {
+          if (controller.signal.aborted) return;
+          const error =
+            reason instanceof Error && reason.message
+              ? reason.message
+              : "Could not calculate the hypothetical score.";
+          setScenario((current) =>
+            current.values === values ? { values, error } : current,
+          );
         });
     }, 450);
     return () => {
-      active = false;
       clearTimeout(timer);
       controller.abort();
     };
-  }, [currentKey, originalKey, retry]);
+  }, [changed, values]);
   return (
     <>
       {example && (
@@ -1146,7 +1086,7 @@ function Result({
           <span className="overline">
             ASSESSMENT COMPLETE · {new Date(result.timestamp).toLocaleString()}
           </span>
-          <h2>{result.label}</h2>
+          <h2>Assessment result</h2>
           <div className="result-summary">
             <Score result={result} />
             <div>
@@ -1164,12 +1104,11 @@ function Result({
               </p>
             </div>
           </div>
-          <div className="card-heading">
-            <h3>What shaped this result?</h3>
-            <span className="badge">Individual explanation</span>
-          </div>
-          <Contributions data={result.explanation.features} />
-          <p className="caption">{result.explanation.method}</p>
+          <details className="workflow-details">
+            <summary>See what affected the score</summary>
+            <Contributions data={result.explanation.features} />
+            <p className="caption">{result.explanation.method}</p>
+          </details>
         </Card>
         <div className="stack">
           <Card>
@@ -1198,122 +1137,126 @@ function Result({
         </div>
       </div>
       <Card>
-        <div className="card-heading">
-          <div>
-            <span className="overline">HYPOTHETICAL EXPLORER</span>
-            <h3>What if an input were different?</h3>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setValues({ ...result.measurements })}
-          >
-            <RefreshCw size={15} />
-            Reset
-          </Button>
-        </div>
-        <p>
-          Both values below are disease-pattern model scores: higher means the
-          classifier leans more toward the disease-present group in the research
-          dataset. They are not personal medical risk estimates. Changing a
-          slider does not establish a treatment effect.
-        </p>
-        <div className="grid two">
-          <div>
-            {fields
-              .filter((f) =>
-                ["age", "chol", "trestbps", "thalach"].includes(f.key),
-              )
-              .map((f) => (
-                <label className="slider-field" key={f.key}>
-                  <span>
-                    {f.label}
-                    <strong>
-                      {values[f.key]} {f.unit}
-                    </strong>
-                  </span>
-                  <input
-                    type="range"
-                    min={f.min}
-                    max={f.max}
-                    step={f.step}
-                    value={values[f.key]}
-                    onChange={(e) =>
-                      setValues({ ...values, [f.key]: +e.target.value })
-                    }
-                  />
-                </label>
-              ))}
-          </div>
-          <div className="comparison" aria-busy={busy}>
-            <div className="comparison-cell">
-              <span>Original measurements</span>
-              <strong>{scorePercent(diseaseScore(result))}</strong>
-              <small>Disease-pattern model score</small>
-              <p>{result.class_description}</p>
+        <details className="workflow-details scenario-details">
+          <summary>Try different inputs</summary>
+          <div className="card-heading">
+            <div>
+              <span className="overline">HYPOTHETICAL EXPLORER</span>
+              <h3>What if an input were different?</h3>
             </div>
-            <div className="comparison-cell" aria-live="polite">
-              <span>Hypothetical measurements</span>
-              <strong>
-                {currentResult
-                  ? scorePercent(diseaseScore(currentResult))
-                  : error
-                    ? "Unavailable"
-                    : "Updating…"}
-              </strong>
-              <small>Disease-pattern model score</small>
-              <p>
-                {currentResult
-                  ? currentResult.class_description
-                  : error
-                    ? "No comparison was produced."
-                    : "Calculating from the current slider values."}
+            <Button
+              variant="outline"
+              onClick={() => setScenario({ values: result.measurements })}
+            >
+              <RefreshCw size={15} />
+              Reset
+            </Button>
+          </div>
+          <p>
+            Both percentages show how strongly the model favors the
+            disease-present class in the research dataset. Changing a slider
+            shows how the model responds to a different input.
+          </p>
+          <div className="grid two">
+            <div>
+              {fields
+                .filter((f) =>
+                  ["age", "chol", "trestbps", "thalach"].includes(f.key),
+                )
+                .map((f) => (
+                  <label className="slider-field" key={f.key}>
+                    <span>
+                      {f.label}
+                      <strong>
+                        {values[f.key]} {f.unit}
+                      </strong>
+                    </span>
+                    <input
+                      type="range"
+                      min={f.min}
+                      max={f.max}
+                      step={f.step}
+                      value={values[f.key]}
+                      onChange={(e) => {
+                        const value = e.currentTarget.valueAsNumber;
+                        setScenario(({ values }) => ({
+                          values: { ...values, [f.key]: value },
+                        }));
+                      }}
+                    />
+                  </label>
+                ))}
+            </div>
+            <div className="comparison" aria-busy={busy}>
+              <div className="comparison-cell">
+                <span>Original measurements</span>
+                <strong>{originalPercent}</strong>
+                <small>Disease-present class score</small>
+                <p>{result.class_description}</p>
+              </div>
+              <div className="comparison-cell" aria-live="polite">
+                <span>Hypothetical measurements</span>
+                <strong>
+                  {hypotheticalPercent ?? (error ? "Unavailable" : "Updating…")}
+                </strong>
+                <small>Disease-present class score</small>
+                <p>
+                  {currentResult
+                    ? currentResult.class_description
+                    : error
+                      ? "No comparison was produced."
+                      : "Calculating from the current slider values."}
+                </p>
+              </div>
+              <div className="comparison-change" aria-live="polite">
+                {difference !== null ? (
+                  <>
+                    <b>
+                      {difference === 0
+                        ? "No change at displayed precision"
+                        : `${difference > 0 ? "+" : ""}${difference.toFixed(1)} percentage points`}
+                    </b>
+                    <span>
+                      {changed
+                        ? "Difference in classifier output only. This is not a change in medical risk."
+                        : "Move a slider to compare a hypothetical measurement set."}
+                    </span>
+                  </>
+                ) : (
+                  <span>
+                    {error
+                      ? "Adjust a value or retry the calculation."
+                      : "The original assessment stays fixed while the new score is calculated."}
+                  </span>
+                )}
+              </div>
+              <p className="comparison-disclaimer">
+                Experimental model output — not a diagnosis or your probability
+                of having heart disease.
               </p>
-            </div>
-            <div className="comparison-change" aria-live="polite">
-              {difference !== null ? (
-                <>
-                  <b>
-                    {Math.abs(difference) < 0.05
-                      ? "No change at displayed precision"
-                      : `${difference > 0 ? "+" : ""}${difference.toFixed(1)} percentage points`}
-                  </b>
-                  <span>
-                    {changed
-                      ? "Difference in classifier output only. This is not a change in medical risk."
-                      : "Move a slider to compare a hypothetical measurement set."}
-                  </span>
-                </>
-              ) : (
-                <span>
-                  {error
-                    ? "Adjust a value or retry the calculation."
-                    : "The original assessment stays fixed while the new score is calculated."}
-                </span>
+              {currentResult &&
+                changed &&
+                currentResult.limitations
+                  .filter((text: string) =>
+                    text.includes("outside the development-data range"),
+                  )
+                  .map((text: string) => (
+                    <p className="scenario-warning" key={text}>
+                      {text}
+                    </p>
+                  ))}
+              {error && (
+                <Button
+                  variant="outline"
+                  onClick={() => setScenario({ values: { ...values } })}
+                >
+                  Retry comparison
+                </Button>
               )}
             </div>
-            <p className="comparison-disclaimer">
-              Experimental model output — not a diagnosis or your probability of
-              having heart disease.
-            </p>
-            {currentResult &&
-              changed &&
-              currentResult.limitations
-                .filter((text: string) =>
-                  text.includes("outside the development-data range"),
-                )
-                .map((text: string) => (
-                  <p className="scenario-warning" key={text}>
-                    {text}
-                  </p>
-                ))}
-            {error && (
-              <Button variant="outline" onClick={() => setRetry((v) => v + 1)}>
-                Retry comparison
-              </Button>
-            )}
           </div>
-        </div>
-        <ErrorBox message={error} />
+          <ErrorBox message={error} />
+        </details>
       </Card>
     </>
   );
@@ -1369,6 +1312,30 @@ function invalidCell(key: string, value: unknown) {
     );
   return field ? n < (field.min ?? 0) || n > (field.max ?? Infinity) : false;
 }
+const timelineColumns = {
+  timestamp: "Date and time",
+  heart_rate: "Resting heart rate",
+  systolic: "Systolic blood pressure",
+  diastolic: "Diastolic blood pressure",
+  cholesterol: "Cholesterol",
+};
+
+function uploadMapping(
+  mapping: Record<string, string>,
+  predictionMode: boolean,
+) {
+  return Object.fromEntries(
+    Object.entries(mapping).map(([column, key]) => [
+      column,
+      predictionMode && key === "cholesterol"
+        ? "chol"
+        : !predictionMode && key === "chol"
+          ? "cholesterol"
+          : key,
+    ]),
+  );
+}
+
 function UploadPage() {
   const { uploads, setUploads, setTemporary } = useSession();
   const [file, setFile] = useState<any>(null);
@@ -1383,14 +1350,20 @@ function UploadPage() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState(false);
-  const targets = [
-    ...order,
-    "timestamp",
-    "heart_rate",
-    "systolic",
-    "diastolic",
-    "cholesterol",
-  ];
+  const reviewHeading = useRef<HTMLHeadingElement>(null);
+  const resultsHeading = useRef<HTMLHeadingElement>(null);
+  const predictionMode = mode === "prediction";
+  const targets = predictionMode ? order : Object.keys(timelineColumns);
+  const columnLabel = (key: string) =>
+    predictionMode
+      ? fieldLabel(key)
+      : (timelineColumns[key as keyof typeof timelineColumns] ?? key);
+  useEffect(() => {
+    if (file) reviewHeading.current?.focus();
+  }, [file]);
+  useEffect(() => {
+    if (results) resultsHeading.current?.focus();
+  }, [results]);
   async function onDrop(files: File[]) {
     if (!files.length) return;
     setBusy(true);
@@ -1404,7 +1377,7 @@ function UploadPage() {
       setProgress(100);
       setFile({ ...data, name: files[0].name });
       setRows(data.rows);
-      setMapping(data.suggested_mapping);
+      setMapping(uploadMapping(data.suggested_mapping, predictionMode));
       setConfirmed(false);
       setPage(0);
       setUploads([...uploads, { name: files[0].name, rows: data.row_count }]);
@@ -1416,15 +1389,25 @@ function UploadPage() {
   }
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    disabled: busy,
     onDropRejected: () => setError("Use one CSV or JSON file up to 2 MB."),
     accept: { "text/csv": [".csv"], "application/json": [".json"] },
     maxFiles: 1,
     maxSize: 2 * 1024 * 1024,
   });
-  const selected = Object.values(mapping).filter(Boolean);
+  const selected = Object.values(mapping).filter((key) =>
+    targets.includes(key),
+  );
   const duplicates = selected.length !== new Set(selected).size;
-  const required = mode === "prediction" ? order : ["timestamp"];
+  const required = predictionMode ? order : ["timestamp"];
   const missing = required.filter((k) => !selected.includes(k));
+  function selectMode(next: string) {
+    if (next === mode) return;
+    setMode(next);
+    setMapping((current) => uploadMapping(current, next === "prediction"));
+    setConfirmed(false);
+    setResults(null);
+  }
   function mapped(row: any) {
     return Object.fromEntries(
       Object.entries(mapping)
@@ -1484,6 +1467,38 @@ function UploadPage() {
     );
   return (
     <>
+      <Card className="upload-setup">
+        <fieldset className="workflow-options" disabled={busy}>
+          <legend>1. What do you want to do?</legend>
+          <label>
+            <input
+              type="radio"
+              name="upload-mode"
+              checked={predictionMode}
+              onChange={() => selectMode("prediction")}
+            />
+            <span>
+              <strong>Assess several records</strong>
+              <small>Each row needs all 13 clinical inputs.</small>
+            </span>
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="upload-mode"
+              checked={!predictionMode}
+              onChange={() => selectMode("monitoring")}
+            />
+            <span>
+              <strong>Track readings over time</strong>
+              <small>
+                Upload dated readings for one person, such as pulse or blood
+                pressure.
+              </small>
+            </span>
+          </label>
+        </fieldset>
+      </Card>
       <div className="grid upload-grid">
         <Card>
           <div
@@ -1494,12 +1509,10 @@ function UploadPage() {
             <span className="upload-symbol">
               <Upload size={31} />
             </span>
-            <h2>
-              {isDragActive
-                ? "Drop your file here"
-                : "Good insights start with good data."}
-            </h2>
-            <p>Drag a CSV or JSON file here, or click to browse.</p>
+            <h2>{isDragActive ? "Drop your file here" : "2. Upload a file"}</h2>
+            <p>
+              Drag a CSV or JSON file here, or choose one from your computer.
+            </p>
             <span className="button secondary">
               Choose a file
               <ArrowUpRight size={15} />
@@ -1515,226 +1528,245 @@ function UploadPage() {
           )}
         </Card>
         <Card>
-          <span className="overline">A CLEAN START</span>
-          <h3>Use the exact input format</h3>
-          <p>
-            Download a template with readable measurement names. Enter actual
-            measurements; never guess a missing test.
-          </p>
-          <Button asChild variant="outline">
-            <a href="/api/template" download>
-              <Download size={16} />
-              Download CSV template
-            </a>
-          </Button>
-          <hr />
-          <p className="caption">
-            Have only pulse or blood pressure? Choose monitoring mode after
-            uploading. Incomplete vitals are not diagnostic inputs.
-          </p>
+          <h3>
+            {predictionMode
+              ? "What goes in an assessment file?"
+              : "What goes in a timeline file?"}
+          </h3>
+          {predictionMode ? (
+            <>
+              <p>
+                Use one row per record and include all 13 fields. The template
+                lists the accepted column names.
+              </p>
+              <Button asChild variant="outline">
+                <a href="/api/template" download>
+                  <Download size={16} /> Download blank CSV template
+                </a>
+              </Button>
+            </>
+          ) : (
+            <p>
+              Include a date and time with its time zone on each row. Add any
+              recorded pulse, blood pressure, or cholesterol readings for that
+              time.
+            </p>
+          )}
         </Card>
       </div>
       <ErrorBox message={error} />
       {file && (
         <Card>
-          <div className="card-heading">
-            <div>
-              <span className="overline">REVIEW BEFORE ANALYSIS</span>
-              <h3>
-                {file.name} <small>{rows.length} rows</small>
-              </h3>
+          <fieldset disabled={busy} className="upload-review">
+            <div className="card-heading">
+              <div>
+                <h2 ref={reviewHeading} tabIndex={-1}>
+                  3. Review and run
+                </h2>
+                <p>
+                  {file.name} · {rows.length}{" "}
+                  {rows.length === 1 ? "row" : "rows"}
+                </p>
+              </div>
             </div>
-            <select
-              value={mode}
-              aria-label="Analysis mode"
-              onChange={(e) => {
-                setMode(e.target.value);
-                setConfirmed(false);
-                setResults(null);
-              }}
-            >
-              <option value="prediction">Complete clinical prediction</option>
-              <option value="monitoring">Timestamped monitoring only</option>
-            </select>
-          </div>
-          <p>{file.notice}</p>
-          <div className="mapping-grid">
-            {file.columns.map((c: string) => (
-              <label className="field" key={c}>
-                <span>{c}</span>
-                <select
-                  value={mapping[c] || ""}
-                  onChange={(e) => {
-                    setMapping({ ...mapping, [c]: e.target.value });
-                    setConfirmed(false);
-                    setResults(null);
-                  }}
-                >
-                  <option value="">Ignore column</option>
-                  {targets.map((k) => (
-                    <option key={k}>{k}</option>
-                  ))}
-                </select>
-              </label>
-            ))}
-          </div>
-          {(missing.length > 0 || duplicates) && (
-            <div className="note compact">
-              <Info size={17} />
+            {!missing.length && !duplicates && (
               <p>
-                {duplicates
-                  ? "Multiple columns map to the same field. Resolve these mappings."
-                  : `Missing required columns: ${missing.join(", ")}. Records with missing clinical data will be ineligible for prediction.`}
+                Required columns matched. You can review the rows or run the
+                analysis.
               </p>
-            </div>
-          )}
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Row</th>
-                  {file.columns.map((c: string) => (
-                    <th key={c}>
-                      {c}
-                      <small>
-                        {mapping[c] ? fieldLabel(mapping[c]) : "Ignored"}
-                      </small>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.slice(page * 10, page * 10 + 10).map((r, i) => (
-                  <tr key={page * 10 + i}>
-                    <td>{page * 10 + i + 1}</td>
-                    {file.columns.map((c: string) => (
-                      <td key={c}>
-                        {fields.find((f) => f.key === mapping[c])?.options ? (
-                          <select
-                            aria-label={`Row ${page * 10 + i + 1} ${fieldLabel(mapping[c])}`}
-                            value={String(
-                              parseMeasurement(mapping[c], r[c]) ?? "",
-                            )}
-                            className={
-                              invalidCell(mapping[c], r[c]) ? "invalid" : ""
-                            }
-                            onChange={(e) => {
-                              const next = [...rows];
-                              next[page * 10 + i] = {
-                                ...r,
-                                [c]: e.target.value,
-                              };
-                              setRows(next);
-                              setResults(null);
-                              setConfirmed(false);
-                            }}
-                          >
-                            <option value="">Not provided</option>
-                            {!fields
-                              .find((f) => f.key === mapping[c])
-                              ?.options?.some(
-                                (o) =>
-                                  o.value ===
-                                  Number(parseMeasurement(mapping[c], r[c])),
-                              ) &&
-                              r[c] !== "" &&
-                              r[c] != null && (
-                                <option value={String(r[c])}>
-                                  Unrecognized value: {String(r[c])}
-                                </option>
-                              )}
-                            {fields
-                              .find((f) => f.key === mapping[c])
-                              ?.options?.map((o) => (
-                                <option value={o.value} key={o.value}>
-                                  {o.label}
-                                </option>
-                              ))}
-                          </select>
-                        ) : (
-                          <input
-                            aria-label={`Row ${page * 10 + i + 1} ${fieldLabel(mapping[c] || c)}`}
-                            className={
-                              mapping[c] && invalidCell(mapping[c], r[c])
-                                ? "invalid"
-                                : ""
-                            }
-                            value={r[c] ?? ""}
-                            onChange={(e) => {
-                              const next = [...rows];
-                              next[page * 10 + i] = {
-                                ...r,
-                                [c]: e.target.value,
-                              };
-                              setRows(next);
-                              setResults(null);
-                              setConfirmed(false);
-                            }}
-                          />
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="pagination">
-            <Button
-              variant="outline"
-              disabled={!page}
-              onClick={() => setPage(page - 1)}
-            >
-              Previous
-            </Button>
-            <span>
-              Page {page + 1} of {Math.ceil(rows.length / 10)}
-            </span>
-            <Button
-              variant="outline"
-              disabled={(page + 1) * 10 >= rows.length}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
-          <div className="units-box">
-            <strong>Confirm units and meanings</strong>
-            <p>
-              Prediction: age in years; trestbps in mmHg; chol in mg/dL; thalach
-              is maximum exercise bpm; oldpeak in source ST-depression units;
-              fasting blood sugar and other selections accept the plain-language
-              choices shown in the assessment form. Existing numeric CSV values
-              are also recognized.
-            </p>
-            <p>
-              Monitoring: timestamp must include a time zone; heart_rate in
-              resting bpm, systolic/diastolic in mmHg, cholesterol in mg/dL. No
-              unit conversion is applied.
-            </p>
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={confirmed}
-                onChange={(e) => setConfirmed(e.target.checked)}
-              />
-              I have reviewed the columns, units, and measurement choices.
-              Monitoring records describe one individual.
-            </label>
-          </div>
-          <Button onClick={run} disabled={!confirmed || duplicates || busy}>
-            {busy ? (
-              <Loader2 className="spin" size={16} />
-            ) : (
-              <Activity size={16} />
             )}
-            Validate & analyze records
-          </Button>
+            <details
+              className="workflow-details"
+              open={missing.length > 0 || duplicates ? true : undefined}
+            >
+              <summary>Match column names</summary>
+              <div className="mapping-grid">
+                {file.columns.map((c: string) => (
+                  <label className="field" key={c}>
+                    <span>{c}</span>
+                    <select
+                      value={targets.includes(mapping[c]) ? mapping[c] : ""}
+                      onChange={(e) => {
+                        setMapping({ ...mapping, [c]: e.target.value });
+                        setConfirmed(false);
+                        setResults(null);
+                      }}
+                    >
+                      <option value="">Ignore column</option>
+                      {targets.map((k) => (
+                        <option key={k} value={k}>
+                          {columnLabel(k)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+              </div>
+            </details>
+            {(missing.length > 0 || duplicates) && (
+              <div className="note compact">
+                <Info size={17} />
+                <p>
+                  {duplicates
+                    ? "Multiple columns map to the same field. Resolve these mappings."
+                    : `Match these required columns before running: ${missing.map(columnLabel).join(", ")}.`}
+                </p>
+              </div>
+            )}
+            <details className="workflow-details">
+              <summary>Review or edit rows</summary>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Row</th>
+                      {file.columns.map((c: string) => (
+                        <th key={c}>
+                          {c}
+                          <small>
+                            {targets.includes(mapping[c])
+                              ? columnLabel(mapping[c])
+                              : "Ignored"}
+                          </small>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.slice(page * 10, page * 10 + 10).map((r, i) => (
+                      <tr key={page * 10 + i}>
+                        <td>{page * 10 + i + 1}</td>
+                        {file.columns.map((c: string) => (
+                          <td key={c}>
+                            {fields.find((f) => f.key === mapping[c])
+                              ?.options ? (
+                              <select
+                                aria-label={`Row ${page * 10 + i + 1} ${fieldLabel(mapping[c])}`}
+                                value={String(
+                                  parseMeasurement(mapping[c], r[c]) ?? "",
+                                )}
+                                className={
+                                  invalidCell(mapping[c], r[c]) ? "invalid" : ""
+                                }
+                                onChange={(e) => {
+                                  const next = [...rows];
+                                  next[page * 10 + i] = {
+                                    ...r,
+                                    [c]: e.target.value,
+                                  };
+                                  setRows(next);
+                                  setResults(null);
+                                  setConfirmed(false);
+                                }}
+                              >
+                                <option value="">Not provided</option>
+                                {!fields
+                                  .find((f) => f.key === mapping[c])
+                                  ?.options?.some(
+                                    (o) =>
+                                      o.value ===
+                                      Number(
+                                        parseMeasurement(mapping[c], r[c]),
+                                      ),
+                                  ) &&
+                                  r[c] !== "" &&
+                                  r[c] != null && (
+                                    <option value={String(r[c])}>
+                                      Unrecognized value: {String(r[c])}
+                                    </option>
+                                  )}
+                                {fields
+                                  .find((f) => f.key === mapping[c])
+                                  ?.options?.map((o) => (
+                                    <option value={o.value} key={o.value}>
+                                      {o.label}
+                                    </option>
+                                  ))}
+                              </select>
+                            ) : (
+                              <input
+                                aria-label={`Row ${page * 10 + i + 1} ${fieldLabel(mapping[c] || c)}`}
+                                className={
+                                  mapping[c] && invalidCell(mapping[c], r[c])
+                                    ? "invalid"
+                                    : ""
+                                }
+                                value={r[c] ?? ""}
+                                onChange={(e) => {
+                                  const next = [...rows];
+                                  next[page * 10 + i] = {
+                                    ...r,
+                                    [c]: e.target.value,
+                                  };
+                                  setRows(next);
+                                  setResults(null);
+                                  setConfirmed(false);
+                                }}
+                              />
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="pagination">
+                <Button
+                  variant="outline"
+                  disabled={!page}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Previous
+                </Button>
+                <span>
+                  Page {page + 1} of {Math.ceil(rows.length / 10)}
+                </span>
+                <Button
+                  variant="outline"
+                  disabled={(page + 1) * 10 >= rows.length}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </details>
+            <div className="units-box">
+              <p>
+                {predictionMode
+                  ? "Use years for age, mmHg for blood pressure, mg/dL for cholesterol, and bpm for maximum exercise heart rate."
+                  : "Use bpm for resting pulse, mmHg for blood pressure, and mg/dL for cholesterol. Include a time zone with each date and time."}
+              </p>
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={(e) => setConfirmed(e.target.checked)}
+                />
+                {predictionMode
+                  ? "I checked the columns and units."
+                  : "I checked the columns and units. These readings are for one person."}
+              </label>
+            </div>
+            <Button
+              onClick={run}
+              disabled={!confirmed || duplicates || missing.length > 0 || busy}
+            >
+              {busy ? (
+                <Loader2 className="spin" size={16} />
+              ) : (
+                <Activity size={16} />
+              )}
+              {predictionMode ? "Run batch assessment" : "Analyze readings"}
+            </Button>
+          </fieldset>
         </Card>
       )}
       {results?.monitoring && (
         <Card>
-          <h3>{results.count} monitoring records analyzed</h3>
+          <h3 ref={resultsHeading} tabIndex={-1}>
+            {results.count} readings analyzed
+          </h3>
           <p>
             These observations are held in session memory. Open the timeline to
             inspect them and optionally save with consent.
@@ -1751,10 +1783,13 @@ function UploadPage() {
         <Card>
           <div className="card-heading">
             <div>
-              <h3>Batch results</h3>
+              <h3 ref={resultsHeading} tabIndex={-1}>
+                Batch results
+              </h3>
               <p>
-                {results.eligible} of {results.total} records eligible. Invalid
-                records were excluded.
+                {results.eligible} of {results.total} rows scored.{" "}
+                {results.total - results.eligible > 0 &&
+                  `${results.total - results.eligible} need corrections.`}
               </p>
             </div>
             <Button
@@ -1802,7 +1837,7 @@ function UploadPage() {
                 <tr>
                   <th>Row</th>
                   <th>Status</th>
-                  <th>Disease-pattern score</th>
+                  <th>Disease-present score</th>
                   <th>Dataset label / validation errors</th>
                 </tr>
               </thead>
@@ -1812,11 +1847,13 @@ function UploadPage() {
                     <td>{r.row}</td>
                     <td>
                       <span className={`badge ${r.eligible ? "" : "warning"}`}>
-                        {r.eligible ? "Eligible" : "Ineligible"}
+                        {r.eligible ? "Scored" : "Needs review"}
                       </span>
                     </td>
                     <td>
-                      {r.result ? scorePercent(diseaseScore(r.result)) : "—"}
+                      {r.result
+                        ? `${(diseaseScore(r.result) * 10).toFixed(2)} / 10`
+                        : "—"}
                     </td>
                     <td>
                       {r.result?.label ||
@@ -2421,6 +2458,7 @@ function Models() {
             ].map(([k, label]) => (
               <button
                 className={curve === k ? "active" : ""}
+                aria-pressed={curve === k}
                 key={k}
                 onClick={() => setCurve(k)}
               >
@@ -2484,8 +2522,11 @@ function Models() {
           false-negative counts are uncertain.
         </p>
         <details>
-          <summary>Research-only BIC model averaging</summary>
+          <summary>Research-only BIC model weights</summary>
           <p>{m.research_bma.method}</p>
+          <p className="caption">
+            A lower BIC gives a specification more weight in this comparison.
+          </p>
           <div className="table-wrap">
             <table>
               <thead>
@@ -2728,7 +2769,7 @@ function Reports() {
     <div className="grid prediction-grid">
       <Card>
         <span className="overline">ASSESSMENT REPORT</span>
-        <h2>Clarity you can take with you.</h2>
+        <h2>Export your latest assessment</h2>
         {latest?.demonstration && (
           <div className="demo-banner">
             Dataset demonstration — not your personal record.
@@ -2755,11 +2796,11 @@ function Reports() {
               <p>{new Date(latest.timestamp).toLocaleString()}</p>
               <div className="grid two">
                 <div>
-                  <small>DISEASE-PATTERN SCORE</small>
-                  <h2>{scorePercent(diseaseScore(latest))}</h2>
+                  <small>Disease-present class score</small>
+                  <h2>{(diseaseScore(latest) * 10).toFixed(2)} / 10</h2>
                 </div>
                 <div>
-                  <small>COMPLETENESS</small>
+                  <small>Input completeness</small>
                   <h2>13 / 13</h2>
                 </div>
               </div>
@@ -2911,9 +2952,9 @@ function About() {
             trends.
           </p>
           <p>
-            Research-only BIC model averaging is kept separate from primary
-            prediction. The synthetic timeline is always labeled and never used
-            to train the static classifier.
+            The Model laboratory shows approximate BIC weights for two logistic
+            specifications. The synthetic timeline is separate from the static
+            classifier’s training dataset.
           </p>
         </Card>
       </div>
