@@ -94,7 +94,7 @@ Confusion matrix, rows actual and columns predicted: `[[19, 9], [3, 30]]`. These
 - `/insights`: source distributions, correlations, global permutation sensitivity, latest individual explanation, definitions, and interpretation guidance. Global sensitivity uses 20 development reference rows; it is descriptive and not held-out feature importance. Numeric correlations of arbitrary category codes require particular caution.
 - `/models`: nested OOF comparisons, selected model, ROC/PR/calibration curves, holdout confusion matrix, variability, research-only BIC weights, dataset audit.
 - `/reports`: export the latest assessment as a two-page PDF with submitted values, version, explanation, and limitations. The report is generated on request by re-running the same deterministic model; its timestamp is the report assessment time. No identifying information is requested. Batch CSV exports stay on the upload page.
-- `/about`: data provenance, methods, privacy, limitations, and technical references. Dark mode is the default. A chosen light/dark theme is stored as a browser preference and applied before page paint. The updated interface uses frosted navigation surfaces, larger type, stronger contrast, and tablet/phone reflow. Reduced-motion CSS disables decorative animation.
+- `/about`: data provenance, methods, privacy, limitations, and technical references. Light mode is the default. The app restores the saved light or dark theme before the page renders. The workspace adapts to tablet and phone screens and respects reduced-motion preferences.
 
 ## API
 
