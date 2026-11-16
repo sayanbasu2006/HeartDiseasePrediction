@@ -10,6 +10,7 @@ type Props = {
   value: number | undefined;
   options: ClinicalOption[];
   describedBy?: string;
+  invalid?: boolean;
   inputRef?: Ref<HTMLInputElement>;
   onChange: (value: number) => void;
   onBlur: () => void;
@@ -22,6 +23,7 @@ export function ChoiceGroup({
   value,
   options,
   describedBy,
+  invalid,
   inputRef,
   onChange,
   onBlur,
@@ -32,6 +34,8 @@ export function ChoiceGroup({
       role="radiogroup"
       aria-label={label}
       aria-describedby={describedBy}
+      aria-required="true"
+      aria-invalid={invalid}
     >
       {options.map((option, index) => (
         <label

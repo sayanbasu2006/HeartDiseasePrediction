@@ -1,0 +1,2 @@
+# Preserve the verified source row endings when adding columns to this CSV.
+backend/data/heart.csv -text whitespace=cr-at-eol

@@ -31,6 +31,11 @@ export function diseaseScore(result: {
   return result.disease_class_score ?? 1 - result.model_score;
 }
 export const scorePercent = (score: number) => `${(score * 100).toFixed(1)}%`;
+export function assessmentScoreLabel(synthetic = false) {
+  return synthetic
+    ? "Higher simulated-pattern score"
+    : "Disease-present class score";
+}
 export function download(content: BlobPart, name: string, type = "text/csv") {
   const url = URL.createObjectURL(new Blob([content], { type }));
   const a = document.createElement("a");
@@ -73,7 +78,17 @@ export interface ClinicalField {
   validationMessage?: string;
 }
 export const fields: ClinicalField[] = catalogue.fields;
+export const syntheticFatField = {
+  key: "visceral_fat",
+  label: "Visceral fat (device index)",
+  group: 1,
+  min: 1,
+  max: 31,
+  step: 0.1,
+  unit: "index",
+};
 export function fieldLabel(key: string) {
+  if (key === "visceral_fat") return "Visceral fat (device index)";
   return fields.find((f) => f.key === key)?.label || key;
 }
 export function formatMeasurement(key: string, value: unknown): string {

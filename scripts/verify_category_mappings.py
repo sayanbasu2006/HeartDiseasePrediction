@@ -4,9 +4,14 @@ from pathlib import Path
 from io import BytesIO
 from zipfile import ZipFile
 import hashlib, json
+import sys
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+if __package__ in (None, ""):
+    sys.path.insert(0, str(ROOT))
+from backend.ml.data import CLEVELAND_DATASET, observed_csv_bytes
+
 FEATURES = [
     "age",
     "sex",
@@ -30,7 +35,8 @@ def verify(archive):
     source = pd.read_csv(
         BytesIO(content), header=None, names=FEATURES + ["diagnosis"], na_values="?"
     )
-    local = pd.read_csv(ROOT / "backend/data/heart.csv").reset_index(names="local_row")
+    observed = observed_csv_bytes(CLEVELAND_DATASET)
+    local = pd.read_csv(BytesIO(observed)).reset_index(names="local_row")
     keys = ["age", "sex", "trestbps", "chol", "fbs", "thalach", "exang", "oldpeak"]
     matches = local.merge(
         source, on=keys, how="left", suffixes=("_local", "_uci"), indicator=True
@@ -66,9 +72,7 @@ def verify(archive):
         "download_url": "https://archive.ics.uci.edu/static/public/45/heart+disease.zip",
         "source_member": "processed.cleveland.data",
         "source_sha256": hashlib.sha256(content).hexdigest(),
-        "local_sha256": hashlib.sha256(
-            (ROOT / "backend/data/heart.csv").read_bytes()
-        ).hexdigest(),
+        "local_sha256": hashlib.sha256(observed).hexdigest(),
         "matched_local_rows": int(matches.local_row.nunique()),
         "method": "Match on eight unchanged fields, then require unanimous agreement for every observed transformed category. Match labels to the original diagnosis field. Duplicate local records are retained for this audit.",
         "mappings": observations,

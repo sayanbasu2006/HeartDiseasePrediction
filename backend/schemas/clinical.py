@@ -22,6 +22,9 @@ FEATURES = [
     "thal",
 ]
 CONTINUOUS = ["age", "trestbps", "chol", "thalach", "oldpeak"]
+SYNTHETIC_FEATURES = [*FEATURES, "visceral_fat"]
+SYNTHETIC_INDEX_MIN = 1
+SYNTHETIC_INDEX_MAX = 31
 CATEGORIES = {
     "sex": [0, 1],
     "cp": [0, 1, 2, 3],
@@ -44,6 +47,7 @@ DISCLAIMER = "Experimental research only. This prediction cannot confirm or excl
 
 class Patient(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    visceral_fat: float | None = Field(default=None, ge=0)
     age: int = Field(ge=18, le=100)
     sex: Literal[0, 1]
     cp: Literal[0, 1, 2, 3]
@@ -79,6 +83,10 @@ class ReportRequest(Patient):
     demonstration: bool = False
 
 
+class SyntheticPatient(Patient):
+    visceral_fat: float = Field(ge=SYNTHETIC_INDEX_MIN, le=SYNTHETIC_INDEX_MAX)
+
+
 class Batch(BaseModel):
     records: list[dict] = Field(min_length=1, max_length=1000)
 
@@ -86,6 +94,7 @@ class Batch(BaseModel):
 class Measurement(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     timestamp: datetime
+    visceral_fat: float | None = Field(default=None, ge=0)
     heart_rate: float | None = Field(default=None, ge=25, le=250)
     systolic: float | None = Field(default=None, ge=60, le=260)
     diastolic: float | None = Field(default=None, ge=30, le=160)
@@ -97,10 +106,14 @@ class Measurement(BaseModel):
             raise ValueError("Timestamp must include a time zone.")
         if all(
             getattr(self, k) is None
-            for k in ["heart_rate", "systolic", "diastolic", "cholesterol"]
+            for k in ["heart_rate", "systolic", "diastolic", "cholesterol", "visceral_fat"]
         ):
             raise ValueError("Provide at least one measurement.")
-        if self.systolic and self.diastolic and self.systolic <= self.diastolic:
+        if (
+            self.systolic is not None
+            and self.diastolic is not None
+            and self.systolic <= self.diastolic
+        ):
             raise ValueError("Systolic must exceed diastolic.")
         return self
 
@@ -144,6 +157,12 @@ class PredictionOutput(BaseModel):
     measurements: Patient
     limitations: list[str]
     explanation: ExplanationOutput | None
+
+
+class SyntheticPredictionOutput(PredictionOutput):
+    synthetic: Literal[True]
+    holdout_accuracy: float = Field(ge=0, le=1)
+    holdout_rows: int = Field(gt=0)
 
 
 class FieldIssue(BaseModel):

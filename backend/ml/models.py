@@ -17,7 +17,7 @@ from sklearn.metrics import brier_score_loss
 from backend.schemas.clinical import CONTINUOUS, CATEGORIES
 
 
-def pipeline(estimator, spline=False):
+def pipeline(estimator, spline=False, *, continuous=CONTINUOUS):
     numeric = [("impute", SimpleImputer(strategy="median"))]
     if spline:
         numeric.append(
@@ -26,7 +26,7 @@ def pipeline(estimator, spline=False):
     numeric.append(("scale", StandardScaler()))
     pre = ColumnTransformer(
         [
-            ("continuous", Pipeline(numeric), CONTINUOUS),
+            ("continuous", Pipeline(numeric), continuous),
             (
                 "categories",
                 Pipeline(

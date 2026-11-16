@@ -16,6 +16,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { fields, fieldLabel, formatMeasurement } from "@/lib/api";
+import { formatDate, locale } from "@/lib/presentation";
 const colors = ["var(--teal)", "var(--coral)", "var(--chart-blue)"];
 export function Trend({
   data,
@@ -51,7 +52,7 @@ export function Trend({
             tickFormatter={
               time
                 ? (v) =>
-                    new Date(v).toLocaleDateString(undefined, {
+                    new Date(v).toLocaleDateString(locale, {
                       month: "short",
                       day: "numeric",
                     })
@@ -69,7 +70,7 @@ export function Trend({
                 <div className="chart-tooltip">
                   <strong>
                     {time
-                      ? new Date(Number(label)).toLocaleString()
+                      ? formatDate(Number(label), true)
                       : `x: ${Number(label).toFixed(2)}`}
                   </strong>
                   {payload.map((p: any) => (
@@ -92,6 +93,7 @@ export function Trend({
               key={key}
               type="linear"
               dataKey={key}
+              className={i === 1 ? "trend-secondary-line" : undefined}
               stroke={colors[i % 3]}
               strokeWidth={i === 0 ? 1.5 : 2.5}
               dot={data.length < 15}
@@ -115,7 +117,7 @@ export function Trend({
               height={22}
               stroke="var(--teal)"
               fill="var(--card)"
-              tickFormatter={(v) => new Date(v).toLocaleDateString()}
+              tickFormatter={(v) => formatDate(v)}
             />
           )}
         </LineChart>
@@ -205,55 +207,91 @@ export function Distribution({
     </div>
   );
 }
+export type FeatureContribution = {
+  feature: string;
+  value?: number;
+  contribution: number;
+};
 export function Contributions({
   data,
   absolute = false,
+  scoreName = "disease-present score",
 }: {
-  data: any[];
+  data: FeatureContribution[];
   absolute?: boolean;
+  scoreName?: string;
 }) {
+  const extent = Math.max(
+    ...data.map((item) => Math.abs(item.contribution)),
+    0.001,
+  );
   return (
-    <div className="contributions">
-      {data.map((r: any) => (
-        <div key={r.feature} className="contribution">
-          <span
-            title={
-              r.value !== undefined
-                ? `${fieldLabel(r.feature)}: ${formatMeasurement(r.feature, r.value)}`
-                : fieldLabel(r.feature)
-            }
-          >
-            {fieldLabel(r.feature)}
-          </span>
-          <div className="track">
-            <span
-              className={
-                absolute ? "away" : r.contribution >= 0 ? "toward" : "away"
-              }
-              style={{
-                width: `${Math.min(100, Math.abs(r.contribution) * 350)}%`,
-              }}
-            />
-          </div>
-          <b>
-            {!absolute && r.contribution >= 0 ? "+" : ""}
-            {r.contribution.toFixed(3)}
-          </b>
-        </div>
-      ))}
+    <figure
+      className="contribution-chart"
+      aria-label={
+        absolute
+          ? "Absolute feature sensitivity"
+          : `Signed contributions to the ${scoreName}`
+      }
+    >
+      <figcaption className="contribution-description">
+        {absolute
+          ? "Absolute model-score change across the development references."
+          : `Negative values decrease the ${scoreName}. Positive values increase it. These contributions describe how the model responds to its inputs.`}
+      </figcaption>
+      <div className="contribution-axis" aria-hidden="true">
+        <span>{absolute ? "Zero" : "Decreases score ←"}</span>
+        <span>{absolute ? "Greater sensitivity" : "→ Increases score"}</span>
+      </div>
+      <div className="contributions">
+        {data.map((item) => {
+          const width =
+            (Math.abs(item.contribution) / extent) * (absolute ? 100 : 50);
+          const sign = item.contribution >= 0 ? "+" : "";
+          const description = `${fieldLabel(item.feature)}: ${absolute ? "" : sign}${item.contribution.toFixed(3)} score units${item.value === undefined ? "" : `; submitted ${formatMeasurement(item.feature, item.value)}`}. ${absolute ? "Absolute sensitivity." : `${item.contribution >= 0 ? "Increases" : "Decreases"} the ${scoreName}.`}`;
+          return (
+            <div
+              className="contribution"
+              key={item.feature}
+              tabIndex={0}
+              aria-label={description}
+              title={description}
+            >
+              <span>{fieldLabel(item.feature)}</span>
+              <div
+                className={`track ${absolute ? "" : "signed"}`}
+                aria-hidden="true"
+              >
+                <span
+                  className={
+                    absolute || item.contribution < 0 ? "away" : "toward"
+                  }
+                  style={{
+                    width: `${width}%`,
+                    left: `${absolute ? 0 : item.contribution >= 0 ? 50 : 50 - width}%`,
+                  }}
+                />
+              </div>
+              <b aria-hidden="true">
+                {!absolute && sign}
+                {item.contribution.toFixed(3)}
+              </b>
+            </div>
+          );
+        })}
+      </div>
       <div className="legend">
         {absolute ? (
           <>
-            <span className="dot teal" />
-            Absolute model-score change
+            <span className="dot teal" /> Absolute score change
           </>
         ) : (
           <>
-            <span className="dot coral" /> Increases disease-pattern score{" "}
-            <span className="dot teal" /> Decreases disease-pattern score
+            <span className="dot teal" /> − Decreases score{" "}
+            <span className="dot coral" /> + Increases score
           </>
         )}
       </div>
-    </div>
+    </figure>
   );
 }

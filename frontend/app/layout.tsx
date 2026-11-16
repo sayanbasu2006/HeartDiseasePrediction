@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./interface.css";
+import "./clinical.css";
 import { Provider } from "@/components/provider";
 export const metadata: Metadata = {
-  title: "CardioLens AI · A clearer view of heart health",
+  title: "CardioLens AI · Cardiovascular Research & Assessment",
   description:
-    "Experimental heart-health analytics, explainable machine learning, and measurement trends.",
+    "Structured cardiovascular research assessments, interpretable machine learning, and recorded measurement trends. Not a medical diagnosis.",
 };
 export default function RootLayout({
   children,
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html lang="en-IN" data-theme="light" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

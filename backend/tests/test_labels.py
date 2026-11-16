@@ -119,7 +119,7 @@ def test_friendly_csv_template_round_trip(client, patient):
         for source, target in data["suggested_mapping"].items()
         if target
     }
-    assert set(mapped) == set(FEATURES)
+    assert set(mapped) == set(FEATURES) | {"visceral_fat"}
     batch = client.post(
         "/api/predict/batch", json={"records": [mapped, {**mapped, "sex": "Other"}]}
     )

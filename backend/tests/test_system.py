@@ -242,6 +242,31 @@ def test_temporal_demo_is_separate(client):
     assert not client.get("/api/history/measurements").json()["measurements"]
 
 
+def test_temporal_hmm_accepts_moderate_sampling_jitter():
+    rng = np.random.default_rng(7)
+    timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    rows = []
+    for i in range(60):
+        high = i // 15 % 2
+        rows.append(
+            Measurement(
+                timestamp=timestamp,
+                heart_rate=68 + high * 13 + rng.normal(0, 2),
+                systolic=113 + high * 15 + rng.normal(0, 3),
+            )
+        )
+        timestamp += timedelta(days=(0.6, 1, 1.4)[i % 3])
+
+    hmm = analyze(rows)["hmm"]
+    assert hmm["available"]
+    assert len(hmm["posterior"]) == len(rows)
+
+    rows[1] = rows[1].model_copy(update={"timestamp": rows[0].timestamp})
+    hmm = analyze(rows)["hmm"]
+    assert not hmm["available"]
+    assert "duplicates" in hmm["reason"]
+
+
 def test_irregular_temporal_rejected():
     start = datetime(2026, 1, 1, tzinfo=timezone.utc)
     rows = [

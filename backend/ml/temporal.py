@@ -5,6 +5,8 @@ from scipy.special import logsumexp
 from sklearn.preprocessing import StandardScaler
 from hmmlearn.hmm import GaussianHMM
 
+MAX_RELATIVE_GAP_DEVIATION = 0.50
+
 
 def forward_backward(log_emission, start, transition):
     log_start = np.log(np.maximum(start, 1e-300))
@@ -71,7 +73,7 @@ def kalman(values, times):
 def analyze(measurements):
     rows = sorted(measurements, key=lambda r: r.timestamp)
     trends = {}
-    keys = ["heart_rate", "systolic", "diastolic", "cholesterol"]
+    keys = ["heart_rate", "systolic", "diastolic", "cholesterol", "visceral_fat"]
     for key in keys:
         available = [r for r in rows if getattr(r, key) is not None]
         if available:
@@ -104,13 +106,16 @@ def analyze(measurements):
     gaps = np.diff([r.timestamp.timestamp() for r in complete])
     median = float(np.median(gaps))
     if (
-        (gaps <= 0).any()
+        not np.isfinite(gaps).all()
+        or (gaps <= 0).any()
         or median <= 0
-        or np.max(np.abs(gaps - median)) / median > 0.35
+        or np.max(np.abs(gaps - median)) > MAX_RELATIVE_GAP_DEVIATION * median
     ):
-        result["hmm"][
-            "reason"
-        ] = "HMM requires approximately regular distinct observations (intervals within 35% of median); this series has duplicates, gaps or irregular sampling."
+        result["hmm"]["reason"] = (
+            "HMM requires approximately regular distinct observations "
+            f"(intervals within {MAX_RELATIVE_GAP_DEVIATION:.0%} of median); "
+            "this series has duplicates, gaps or irregular sampling."
+        )
         return result
     raw = np.array([[r.heart_rate, r.systolic] for r in complete])
     if (raw.std(axis=0) < 0.5).any():

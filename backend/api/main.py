@@ -7,9 +7,10 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.responses import Response, JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.middleware.cors import CORSMiddleware
-from backend.ml.data import ROOT
+from backend.ml.data import CLEVELAND_DATASET, ROOT
 from backend.schemas.clinical import (
     Patient,
+    SyntheticPatient,
     ReportRequest,
     Batch,
     Measurement,
@@ -17,11 +18,12 @@ from backend.schemas.clinical import (
     AnalysisInput,
     FEATURES,
     PredictionOutput,
+    SyntheticPredictionOutput,
     ExplanationOutput,
     BatchOutput,
     UploadOutput,
 )
-from backend.services.inference import artifacts, predict
+from backend.services.inference import artifacts, predict, predict_synthetic, synthetic_artifact
 from backend.services.uploads import parse, errors, normalize, MAX_BYTES
 from backend.services.reports import make_report
 from backend.ml.temporal import analyze
@@ -137,6 +139,11 @@ def prediction(patient: Patient):
     return predict(patient)
 
 
+@app.post("/api/synthetic/predict", response_model=SyntheticPredictionOutput)
+def synthetic_prediction(patient: SyntheticPatient):
+    return predict_synthetic(patient)
+
+
 @app.post("/api/explain", response_model=ExplanationOutput)
 def explanation(patient: Patient):
     return predict(patient)["explanation"]
@@ -177,7 +184,7 @@ async def upload(file: UploadFile = File(...)):
 @app.get("/api/template")
 def template():
     buffer = io.StringIO()
-    csv.writer(buffer).writerow([FIELDS[f]["label"] for f in FEATURES])
+    csv.writer(buffer).writerow([FIELDS[f]["label"] for f in FEATURES] + ["Visceral fat (device index)"])
     return Response(
         buffer.getvalue(),
         media_type="text/csv",
@@ -246,13 +253,43 @@ def report(patient: ReportRequest):
 def example():
     import pandas as pd
 
-    row = pd.read_csv(ROOT / "data/heart.csv").iloc[0]
+    row = pd.read_csv(CLEVELAND_DATASET).iloc[0]
+    measurements = {field: float(row[field]) for field in FEATURES}
+    generated_fields = []
+    if row.get("visceral_fat_source") == "generated":
+        measurements["visceral_fat"] = float(row["visceral_fat"])
+        generated_fields.append("visceral_fat")
     return {
-        "measurements": {f: float(row[f]) for f in FEATURES},
+        "measurements": measurements,
+        "generated_fields": generated_fields,
         "synthetic": False,
         "demonstration_only": True,
-        "notice": "An actual dataset example, not a personal assessment; overlaps training data and cannot demonstrate generalization.",
+        "notice": (
+            "A Cleveland example record with a generated visceral fat index."
+            if generated_fields
+            else "A Cleveland example record used for demonstration."
+        ),
     }
+
+
+@app.get("/api/synthetic/example")
+def synthetic_example():
+    return {
+        "measurements": synthetic_artifact()["example"],
+        "synthetic": True,
+        "demonstration_only": True,
+    }
+
+
+@app.post("/api/synthetic/report")
+def synthetic_report(patient: SyntheticPatient):
+    return Response(
+        make_report(predict_synthetic(patient)),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "attachment; filename=cardiolens-model-demo.pdf"
+        },
+    )
 
 
 @app.get("/api/global-importance")

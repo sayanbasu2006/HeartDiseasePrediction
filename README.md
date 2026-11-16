@@ -1,6 +1,6 @@
 # CardioLens AI
 
-A new local web application with a Next.js / React frontend and a FastAPI machine-learning backend. The former CardioScope Qt desktop application, Mac bundle, launchers, old source, and old artifacts have been removed from this workspace. A recovery archive was created at `/private/tmp/cardioscope-before-cardiolens-20261103.tar.gz`; temporary storage may be cleared by the OS. The supplied original CSV remains unchanged at its Downloads location and is copied to `backend/data/heart.csv`.
+A new local web application with a Next.js / React frontend and a FastAPI machine-learning backend. The former CardioScope Qt desktop application, Mac bundle, launchers, old source, and old artifacts have been removed from this workspace. A recovery archive was created at `/private/tmp/cardioscope-before-cardiolens-20261103.tar.gz`; temporary storage may be cleared by the OS. The working Cleveland dataset is in `backend/data/heart.csv`.
 
 This is an educational research platform, not a diagnosis, treatment tool, or clinically validated cardiovascular event risk calculator. Feature and outcome meanings were verified against the primary UCI Cleveland reference by matching all 303 supplied rows. The app uses plain-language choices and preserves numeric model inputs internally. The saved positive class (`target=1`) corresponds to no recorded disease in the source; `target=0` corresponds to disease present. Results now describe these source dataset patterns and cannot diagnose a person.
 
@@ -22,7 +22,7 @@ cd ..
 The current workspace already has installed dependencies and a trained model. Start FastAPI in one terminal:
 
 ```bash
-cd "/Users/sayanbasu/Downloads/Machine Learning Project"
+cd "/Users/sayanbasu/Downloads/HeartDiseasePrediction"
 source .venv/bin/activate
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8000 --no-access-log
 ```
@@ -30,7 +30,7 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m uvicorn backend.api.main:app 
 Start Next.js in a second terminal:
 
 ```bash
-cd "/Users/sayanbasu/Downloads/Machine Learning Project/frontend"
+cd "/Users/sayanbasu/Downloads/HeartDiseasePrediction/frontend"
 npm run dev
 ```
 
@@ -40,7 +40,9 @@ Open [CardioLens AI](http://127.0.0.1:3000). API schema: [FastAPI docs](http://1
 
 ## Dataset and training
 
-The actual source CSV contains 303 rows, 14 columns, 165 positive labels, 138 negative labels, no missing cells, and one duplicate. Five records contain `ca=4`; two contain `thal=0`. The source comparison shows these are missing-value markers (`ca=4`, `thal=0`). Historical training artifacts retain them, but new assessments abstain when either test is unavailable. `fbs` is a binary indicator, never a glucose concentration. All 13 fields are required at inference; no missing clinical tests are fabricated.
+The source CSV contains 303 rows, 14 audited columns, 165 positive labels, 138 negative labels, and one duplicate. Five records contain `ca=4`; two contain `thal=0`. These are missing-value markers. Historical training artifacts retain them, but new assessments abstain when either test is unavailable. `fbs` indicates whether fasting blood sugar exceeded 120 mg/dL. The main assessment requires the 13 audited inputs.
+
+The main CSV also carries a reproducible example index in `visceral_fat` with `visceral_fat_source=generated`. The original fields and outcome retain their audited checksum. The **Load Cleveland example** action fills the index for review. The standard assessment accepts a device index for reference in the on-screen result and PDF. The clinical training loader uses the observed columns. To regenerate the example indices, run `python -m backend.ml.add_visceral_fat`.
 
 Put an alternative verified file with the exact schema at `backend/data/heart.csv`. To train a new experiment:
 
@@ -50,6 +52,18 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m backend.ml.train --out backen
 ```
 
 The default is `python -m backend.ml.train` for an empty `backend/artifacts` directory. The script refuses to overwrite a completed experiment, to discourage repeated inspection of the holdout. Review a new experiment scientifically before replacing the runtime artifact directory and restarting FastAPI. Changing datasets or environments requires training compatible artifacts. Do not select seeds, methods, or experiments by repeatedly checking holdout performance.
+
+### Visceral fat model demonstration
+
+On `/predict`, choose **Explore the model demo**. Adjust the generated inputs, including the visceral-fat device index, and choose **Run model demo**. The result shows the simulated score, feature contributions, a visceral-fat slider, and a PDF with the data source.
+
+The [generated CSV](backend/data/synthetic_visceral_fat.csv) contains 3,200 training records and 800 independently generated holdout records. A logistic regression model achieved **94.25% accuracy on the synthetic holdout**, compared with **74.75%** for the same model trained without visceral fat. The simulation explicitly uses visceral fat to generate the artificial labels. These figures measure how well the models reproduce that rule. The standard Cleveland assessment uses its own dataset, model, and evaluation.
+
+Reproduce the synthetic dataset and model from the project root.
+
+```bash
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m backend.ml.train_synthetic
+```
 
 The training pipeline:
 
@@ -84,17 +98,18 @@ Confusion matrix, rows actual and columns predicted: `[[19, 9], [3, 30]]`. These
 ## Demonstrate the application
 
 - `/`: responsive landing page, animated ECG / heart, local privacy context.
-- `/dashboard`: real session assessment, stored measurement summaries and trends, session uploads. Empty states appear when there is no data. Completed assessment activity is kept in session memory; it is not a persistent assessment archive.
+- `/dashboard`: completed assessments, stored measurement summaries and trends, and reviewed uploads. Empty states appear when there is no data.
 - `/predict`: four-step required-input form. For a presentation, explicitly click **Load dataset example**. The record overlaps source training data and is clearly labeled; it must not be presented as evidence of generalization. Review then run the actual API. Explanation contributions are approximate interventional Shapley values, with a deterministic seed and score-space additivity. Hybrid background records can be unrealistic because of correlations.
 - On a result, change sliders in **What if?**; debounced requests compute real hypothetical model outputs. Reset restores the supplied record. No causal or treatment claim is made.
 - `/upload`: drop CSV/JSON, select prediction or monitoring mode, confirm editable column mappings and units, edit preview cells, then analyze. All 1,000 allowed records can be reviewed in ten-row pages. Missing and out-of-range cells are highlighted; backend validation is authoritative. Eligible batch records receive predictions; unsupported records receive errors. Search, sort, and export results as CSV. The template contains readable measurement headers only, so no patient measurements are invented. Category columns accept plain-language values such as Male, Female, Yes, Typical angina and Normal ECG. Original numeric inputs remain supported internally, except verified missing-test markers, which now cause abstention.
-- For monitoring uploads, use `timestamp` (ISO 8601 with timezone), optional `heart_rate`, `systolic`, `diastolic`, `cholesterol`. Blank unmeasured fields remain absent. Resting heart rate never substitutes for `thalach`. Records initially remain in session memory; save from the timeline only with consent.
+- For monitoring uploads, use `timestamp` (ISO 8601 with timezone), optional `heart_rate`, `systolic`, `diastolic`, `cholesterol`, `visceral_fat`. Blank unmeasured fields remain absent. Resting heart rate never substitutes for `thalach`. Saving readings to measurement history requires separate consent on the timeline.
 - `/history`: add timestamped observations, opt in to SQLite storage or analyze without saving, filter dates, hover/brush plots, choose measurements, export records, and delete stored data. Missing readings are explicitly marked. Click **Explore sample timeline** for 60 clearly labeled synthetic observations. This data is never saved or used for static classifier training.
-- Temporal fitting requires 30 paired heart-rate/systolic observations, distinct timestamps and approximately regular intervals within 35% of the median interval, meaningful variation, convergence and occupancy checks. Gaussian HMM parameters use EM; log-domain forward/backward and Viterbi are implemented explicitly and tested against enumeration. States describe measurement patterns only. Kalman process variance scales with elapsed days and shows raw observations, filtered trends, and estimate variability in tooltips. Neither temporal method forecasts medical events.
+- Temporal fitting requires at least 30 paired heart-rate/systolic observations, distinct timestamps, and gaps within 50% of the median interval. Fitting also checks variation, convergence, and state occupancy. Gaussian HMM parameters use EM; log-domain forward/backward and Viterbi are implemented explicitly and tested against enumeration. States describe measurement patterns only. Kalman process variance scales with elapsed days and shows raw observations, filtered trends, and estimate variability in tooltips. Neither temporal method forecasts medical events.
 - `/insights`: source distributions, correlations, global permutation sensitivity, latest individual explanation, definitions, and interpretation guidance. Global sensitivity uses 20 development reference rows; it is descriptive and not held-out feature importance. Numeric correlations of arbitrary category codes require particular caution.
 - `/models`: nested OOF comparisons, selected model, ROC/PR/calibration curves, holdout confusion matrix, variability, research-only BIC weights, dataset audit.
 - `/reports`: export the latest assessment as a two-page PDF with submitted values, version, explanation, and limitations. The report is generated on request by re-running the same deterministic model; its timestamp is the report assessment time. No identifying information is requested. Batch CSV exports stay on the upload page.
 - `/about`: data provenance, methods, privacy, limitations, and technical references. Light mode is the default. The app restores the saved light or dark theme before the page renders. The workspace adapts to tablet and phone screens and respects reduced-motion preferences.
+- **Save workspace data in this browser** keeps completed assessments, the current assessment draft, upload activity, the latest upload preview and mapping, and temporary timeline readings across refreshes. It is off by default. Drafts and previews remain available during navigation in the current tab. Turning browser saving off removes the stored copy. Uploaded records require confirmation of columns and units before each new analysis.
 
 ## API
 
@@ -109,7 +124,7 @@ Typed clinical/history requests reject missing, extra, out-of-range, nonfinite, 
 ## Verification
 
 ```bash
-cd "/Users/sayanbasu/Downloads/Machine Learning Project"
+cd "/Users/sayanbasu/Downloads/HeartDiseasePrediction"
 source .venv/bin/activate
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest backend/tests -q
 cd frontend
@@ -137,7 +152,15 @@ frontend/
   lib/          Typed field definitions, API, safe CSV exports
 ```
 
-The frontend uses React Hook Form, Zod, Dropzone, Recharts, Lucide, Tailwind and a Radix/CVA button component following shadcn conventions. CSS handles microinteractions, reduced-motion behavior, ECG and heart animations. Framer Motion is available for additional transitions; the current interface uses CSS animations.
+The frontend uses React Hook Form, Zod, Dropzone, Recharts, Lucide, Tailwind and a Radix/CVA button component following shadcn conventions. The institutional interface uses restrained CSS transitions with reduced-motion support and no animated heart. Framer Motion remains available.
+
+## CardioLens institutional interface
+
+The homepage, navigation, four-step assessment, results, uploads, measurement history and research pages share a navy/ivory design system with restrained saffron geometry and teal actions. `frontend/app/clinical.css` defines the shared tokens and responsive presentation. `site-shell.tsx`, `landing.tsx` and `clinical-entry.tsx` provide reusable navigation, editorial sections and accessible clinical fields; `lib/presentation.ts` centralizes navigation, homepage copy and Indian date formatting for future localisation. Manrope and Inter are preferred font families with system fallbacks; remote font downloads are not required.
+
+Assessment progress counts supported required inputs, and the final review retains the original 13-feature contract. Optional visceral fat remains reference-only. Results include signed disease-present score contributions, recorded values and the original PDF action; exported reports use the same visual identity. Measurement comparison cards summarize only actual recorded readings. Homepage evidence is fetched from the evaluation API and never substituted with fabricated metrics when unavailable.
+
+The redesign does not retrain the classifier, change its encodings or introduce clinical risk calculations. It retains the existing workflow and API contracts. See `docs/VERIFICATION.md` for checks and the limits of the current browser verification.
 
 ## Docker
 
@@ -145,7 +168,7 @@ Optional local setup: `docker compose up --build`, then open `http://127.0.0.1:3
 
 ## Remaining limits
 
-No login, multi-user separation, external clinical validation, external dataset-provenance verification, causal interpretation, persistent assessment archive, OCR, wearable integration, or reduced-feature classifier is included. Raw uploads and assessment inputs are ephemeral. Only consented measurement history is persistent; deletion removes active SQLite records but is not a forensic secure erasure guarantee. Current record history has no person identifier and must represent one individual when used for temporal analysis; do not combine multiple people’s readings. In-memory upload review must therefore be limited to a single individual for monitoring mode. Independent multi-patient complete clinical rows are supported for static batch classification.
+No login, multi-user separation, external clinical validation, external dataset-provenance verification, causal interpretation, OCR, wearable integration, or reduced-feature classifier is included. Browser saving stores workspace data in the current browser profile. Consented measurement history is stored separately in SQLite. Deletion removes active SQLite records. Current record history has no person identifier and must represent one individual when used for temporal analysis. Independent multi-patient complete clinical rows are supported for static batch classification.
 
 The app and model are production-structured for local demonstration, not production clinical software. External exposure would require authentication, authorization, transport security, retention controls, operational monitoring, and independent model validation. The model is never silently retrained at startup, and no hardcoded scores substitute for an unavailable backend.
 

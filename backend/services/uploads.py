@@ -16,6 +16,10 @@ ALIASES = {
     "pulse": "heart_rate",
     "sbp": "systolic",
     "dbp": "diastolic",
+    "visceral fat": "visceral_fat",
+    "visceral fat (device index)": "visceral_fat",
+    "viseral fat": "visceral_fat",
+    **{f["label"].lower(): f["key"] for f in FIELDS.values()},
 }
 
 
@@ -58,12 +62,11 @@ def parse(raw, filename):
     columns = list(dict.fromkeys(str(k) for r in rows for k in r))
     if len(columns) > 60:
         raise ValueError("Too many columns (maximum 60).")
-    ALIASES.update({f["label"].lower(): f["key"] for f in FIELDS.values()})
     suggestions = {
         c: (
             c.lower().strip()
             if c.lower().strip()
-            in FEATURES + ["timestamp", "heart_rate", "systolic", "diastolic"]
+            in FEATURES + ["timestamp", "heart_rate", "systolic", "diastolic", "visceral_fat"]
             else ALIASES.get(c.lower().strip(), "")
         )
         for c in columns
