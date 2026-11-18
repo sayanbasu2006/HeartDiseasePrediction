@@ -568,6 +568,7 @@ p {
   font-weight: 600;
   white-space: normal;
   text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 .button.primary,
 :root[data-theme="dark"] .button.primary {
