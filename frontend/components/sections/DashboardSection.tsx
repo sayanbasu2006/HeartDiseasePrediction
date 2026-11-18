@@ -14,20 +14,33 @@ import {
 import { Trend } from "@/components/charts";
 import { useSession } from "@/components/provider";
 import { formatDate } from "@/lib/presentation";
-import { post } from "@/lib/api";
+import { assessmentInputCounts, fields, post } from "@/lib/api";
+import { countSupportedInputs } from "@/lib/measurement-validation";
 import { Card, ErrorBox, Empty, Stat, Score } from "./shared";
 import { useResource } from "./useResource";
+import { VisceralFatSummary } from "./VisceralFatPanel";
 
 export function DashboardSection() {
-  const { latest, assessments, uploads, storage } = useSession();
+  const { latest, assessments, uploads, storage, temporary } = useSession();
+  const requiredInputs = latest?.synthetic
+    ? assessmentInputCounts.total
+    : assessmentInputCounts.required;
   const history = useResource("/history/measurements");
   const metrics = useResource("/model-info");
   const [analysis, setAnalysis] = useState<any>(null);
   useEffect(() => {
-    post("/history/analyze", {})
-      .then(setAnalysis)
+    if (temporary) {
+      setAnalysis(temporary.analysis);
+      return;
+    }
+    const controller = new AbortController();
+    post("/history/analyze", {}, { signal: controller.signal })
+      .then((value) => {
+        if (!controller.signal.aborted) setAnalysis(value);
+      })
       .catch(() => {});
-  }, [history.data]);
+    return () => controller.abort();
+  }, [history.data, temporary]);
   return (
     <>
       <div className="overview-banner">
@@ -67,9 +80,17 @@ export function DashboardSection() {
           icon={HeartPulse}
         />
         <Stat
-          title="Saved measurements"
-          value={history.data?.measurements?.length ?? "—"}
-          sub="Stored with your consent"
+          title={temporary ? "Workspace measurements" : "Saved measurements"}
+          value={
+            temporary?.records.length ??
+            history.data?.measurements?.length ??
+            "—"
+          }
+          sub={
+            temporary
+              ? "Readings in this browser workspace"
+              : "Stored with your consent"
+          }
           icon={History}
         />
         <Stat
@@ -79,8 +100,12 @@ export function DashboardSection() {
           icon={Upload}
         />
         <Stat
-          title="Input completeness"
-          value={latest ? (latest.synthetic ? "14 / 14" : "13 / 13") : "—"}
+          title="Required inputs"
+          value={
+            latest
+              ? `${countSupportedInputs(fields, latest.measurements)} / ${requiredInputs}`
+              : "—"
+          }
           sub={
             latest?.synthetic
               ? "Simulated inputs"
@@ -98,7 +123,9 @@ export function DashboardSection() {
                 Heart-rate trend <small>bpm</small>
               </h3>
             </div>
-            <span className="badge">Recorded data</span>
+            <span className="badge">
+              {temporary ? "Workspace readings" : "Recorded data"}
+            </span>
           </div>
           {analysis?.trends?.heart_rate ? (
             <Trend data={analysis.trends.heart_rate} brush />
@@ -122,6 +149,7 @@ export function DashboardSection() {
           {latest ? (
             <>
               <Score result={latest} />
+              <VisceralFatSummary result={latest} />
               <Link className="text-link" href="/reports">
                 Export assessment
                 <ArrowUpRight size={15} />
@@ -130,14 +158,14 @@ export function DashboardSection() {
           ) : (
             <Empty
               title="See your result in context"
-              text="Complete a guided assessment using all 13 recorded clinical inputs."
+              text="Complete the assessment using all 14 parameters, including your visceral fat index."
               href="/predict"
               label="Start assessment"
             />
           )}
         </Card>
       </div>
-      <div className="grid two">
+      <div className="grid three">
         <Card>
           <div className="card-heading">
             <h3>
@@ -167,6 +195,30 @@ export function DashboardSection() {
             <Empty
               title="No lab history yet"
               text="Record actual cholesterol measurements over time."
+            />
+          )}
+        </Card>
+        <Card>
+          <div className="card-heading">
+            <h3>
+              Visceral fat <small>device index</small>
+            </h3>
+            <Activity size={18} />
+          </div>
+          {analysis?.trends?.visceral_fat ? (
+            <>
+              <Trend data={analysis.trends.visceral_fat} />
+              <p className="caption">
+                Compare readings from the same device. Index scales vary by
+                manufacturer.
+              </p>
+            </>
+          ) : (
+            <Empty
+              title="Follow your body composition"
+              text="Record visceral fat readings to see how your device index changes over time."
+              href="/history"
+              label="Add a reading"
             />
           )}
         </Card>

@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
 
-FEATURES = [
+OBSERVED_FEATURES = [
     "age",
     "sex",
     "cp",
@@ -21,8 +21,10 @@ FEATURES = [
     "ca",
     "thal",
 ]
-CONTINUOUS = ["age", "trestbps", "chol", "thalach", "oldpeak"]
-SYNTHETIC_FEATURES = [*FEATURES, "visceral_fat"]
+FEATURES = [*OBSERVED_FEATURES, "visceral_fat"]
+OBSERVED_CONTINUOUS = ["age", "trestbps", "chol", "thalach", "oldpeak"]
+CONTINUOUS = [*OBSERVED_CONTINUOUS, "visceral_fat"]
+SYNTHETIC_FEATURES = FEATURES
 SYNTHETIC_INDEX_MIN = 1
 SYNTHETIC_INDEX_MAX = 31
 CATEGORIES = {
@@ -47,7 +49,7 @@ DISCLAIMER = "Experimental research only. This prediction cannot confirm or excl
 
 class Patient(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
-    visceral_fat: float | None = Field(default=None, ge=0)
+    visceral_fat: float = Field(ge=0)
     age: int = Field(ge=18, le=100)
     sex: Literal[0, 1]
     cp: Literal[0, 1, 2, 3]
@@ -140,6 +142,23 @@ class ExplanationOutput(BaseModel):
     features: list[FeatureContribution]
 
 
+class VisceralFatPoint(BaseModel):
+    index: float
+    score: float = Field(ge=0, le=1)
+
+
+class VisceralFatEffect(BaseModel):
+    index: float
+    reference_index: float
+    reference_score: float = Field(ge=0, le=1)
+    submitted_score: float = Field(ge=0, le=1)
+    difference: float = Field(ge=-1, le=1)
+    development_range: tuple[float, float]
+    reference_count: int
+    curve: list[VisceralFatPoint]
+    method: str
+
+
 class PredictionOutput(BaseModel):
     timestamp: datetime
     predicted_class: Literal[0, 1]
@@ -157,6 +176,7 @@ class PredictionOutput(BaseModel):
     measurements: Patient
     limitations: list[str]
     explanation: ExplanationOutput | None
+    visceral_fat_effect: VisceralFatEffect
 
 
 class SyntheticPredictionOutput(PredictionOutput):

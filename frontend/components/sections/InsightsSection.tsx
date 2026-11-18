@@ -5,14 +5,22 @@ import { useSession } from "@/components/provider";
 import { fields, fieldLabel } from "@/lib/api";
 import { Card, ErrorBox, Empty, Loading } from "./shared";
 import { useResource } from "./useResource";
+import { VisceralFatPanel, VisceralFatGuide } from "./VisceralFatPanel";
 
 export function InsightsSection() {
   const distribution = useResource("/distributions");
   const global = useResource("/global-importance");
-  const [feature, setFeature] = useState("age");
+  const [feature, setFeature] = useState("visceral_fat");
   const { latest } = useSession();
   return (
     <>
+      {latest ? (
+        <VisceralFatPanel result={latest} />
+      ) : (
+        <Card>
+          <VisceralFatGuide />
+        </Card>
+      )}
       <div className="grid two">
         <Card>
           <span className="overline">EXPLORE THE SOURCE DATA</span>
@@ -43,6 +51,8 @@ export function InsightsSection() {
           <p className="caption">
             302 unique source records. Counts describe this dataset’s
             composition; they do not define a healthy range.
+            {feature === "visceral_fat" &&
+              " Visceral fat indices in the training dataset are generated, not measured."}
           </p>
         </Card>
         <Card>
@@ -138,7 +148,9 @@ export function InsightsSection() {
                       .filter((o) => o.supported)
                       .map((o) => o.label)
                       .join("; ")}.`
-                  : `Supported range: ${f.min}–${f.max} ${f.unit}.`}{" "}
+                  : f.max === undefined
+                    ? `Supported values: ${f.min ?? 0} or higher ${f.unit ?? ""}.`
+                    : `Supported range: ${f.min}–${f.max} ${f.unit ?? ""}.`}{" "}
                 Unknown or missing measurements cannot be guessed.
               </p>
             </details>

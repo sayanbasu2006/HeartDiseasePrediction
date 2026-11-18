@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { visceralFatEffectSchema } from "./visceral-fat";
 
 export const workspaceStorageKey = "cardiolens-workspace-v1";
 
@@ -16,6 +17,7 @@ const assessment = z.looseObject({
   measurements: z.record(z.string(), z.number().nullable()),
   demonstration: z.boolean().optional(),
   synthetic: z.literal(true).optional(),
+  visceral_fat_effect: visceralFatEffectSchema.optional(),
   explanation: z
     .looseObject({
       features: z.array(

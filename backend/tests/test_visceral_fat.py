@@ -11,9 +11,9 @@ def test_cleveland_csv_and_example_carry_generated_index_provenance(client):
     assert len(records) == 303
     assert records.visceral_fat.between(1, 31).all()
     assert records.visceral_fat_source.eq("generated").all()
-    observed, audit = load_data()
-    assert "visceral_fat" not in observed
-    assert audit["sha256"] == AUDIT["local_sha256"]
+    training, audit = load_data()
+    assert "visceral_fat" in training
+    assert audit["observed_sha256"] == AUDIT["local_sha256"]
 
     example = client.get("/api/example").json()
     assert example["synthetic"] is False
@@ -22,14 +22,14 @@ def test_cleveland_csv_and_example_carry_generated_index_provenance(client):
     assert "generated" in example["notice"]
 
 
-def test_visceral_fat_is_retained_without_changing_prediction(client, patient):
+def test_visceral_fat_changes_prediction_and_is_explained(client, patient):
     baseline = client.post('/api/predict', json=patient).json()
     response = client.post('/api/predict', json={**patient, 'visceral_fat': 8.5})
     assert response.status_code == 200
     result = response.json()
     assert result['measurements']['visceral_fat'] == 8.5
-    assert result['model_score'] == baseline['model_score']
-    assert all(f['feature'] != 'visceral_fat' for f in result['explanation']['features'])
+    assert result['model_score'] != baseline['model_score']
+    assert any(f['feature'] == 'visceral_fat' for f in result['explanation']['features'])
 
 
 def test_visceral_fat_measurement():
@@ -60,7 +60,7 @@ def test_visceral_fat_history_round_trip_and_trend(client):
     assert not analysis["hmm"]["available"]
 
 
-def test_visceral_fat_batch_optional_and_invalid_values(client, patient):
+def test_visceral_fat_batch_requires_finite_recorded_values(client, patient):
     values = [None, "", "0", "8.5", "-1", "nan", "inf", "invalid"]
     response = client.post(
         "/api/predict/batch",
@@ -68,11 +68,22 @@ def test_visceral_fat_batch_optional_and_invalid_values(client, patient):
     )
     assert response.status_code == 200
     rows = response.json()["results"]
-    assert [row["eligible"] for row in rows] == [True] * 4 + [False] * 4
-    assert [row["result"]["measurements"]["visceral_fat"] for row in rows[:4]] == [
-        None, None, 0, 8.5
+    assert [row["eligible"] for row in rows] == [False, False, True, True] + [False] * 4
+    assert [row["result"]["measurements"]["visceral_fat"] for row in rows[2:4]] == [
+        0, 8.5
     ]
-    assert len({row["result"]["model_score"] for row in rows[:4]}) == 1
+    assert len({row["result"]["model_score"] for row in rows[2:4]}) == 2
+
+
+def test_visceral_fat_cannot_be_omitted_from_assessment_or_report(client, patient):
+    patient.pop("visceral_fat")
+    for path in ("/api/predict", "/api/explain", "/api/report"):
+        response = client.post(path, json=patient)
+        assert response.status_code == 422
+        assert any(error["loc"][-1] == "visceral_fat" for error in response.json()["detail"])
+    batch = client.post("/api/predict/batch", json={"records": [patient]}).json()
+    assert batch["eligible"] == 0
+    assert batch["results"][0]["errors"][0]["field"] == "visceral_fat"
 
 
 def test_visceral_fat_does_not_change_existing_temporal_analysis():
@@ -87,3 +98,60 @@ def test_visceral_fat_does_not_change_existing_temporal_analysis():
     assert result["hmm"] == baseline["hmm"]
     assert result["trends"].pop("visceral_fat")
     assert result == baseline
+
+
+@pytest.mark.parametrize("synthetic", [False, True])
+def test_fat_effect_is_a_same_record_model_comparison(client, patient, synthetic):
+    path = "/api/synthetic/predict" if synthetic else "/api/predict"
+    if synthetic:
+        patient = client.get("/api/synthetic/example").json()["measurements"]
+    result = client.post(path, json=patient).json()
+    effect = result["visceral_fat_effect"]
+    assert effect["index"] == patient["visceral_fat"]
+    assert effect["submitted_score"] == result["disease_class_score"]
+    reference = client.post(
+        f"{path}?explain=false",
+        json={**patient, "visceral_fat": effect["reference_index"]},
+    ).json()
+    assert effect["reference_score"] == pytest.approx(reference["disease_class_score"])
+    assert effect["difference"] == pytest.approx(
+        result["disease_class_score"] - reference["disease_class_score"]
+    )
+    assert reference["visceral_fat_effect"]["difference"] == pytest.approx(0)
+    assert reference["visceral_fat_effect"]["curve"] == []
+    assert effect["reference_count"] > 0
+    assert "generated" in effect["method"]
+    assert "not a clinical target" in effect["method"]
+    indices = [point["index"] for point in effect["curve"]]
+    assert indices == sorted(set(indices))
+    assert effect["index"] in indices and effect["reference_index"] in indices
+    for point in effect["curve"][::3]:
+        actual = client.post(
+            f"{path}?explain=false",
+            json={**patient, "visceral_fat": point["index"]},
+        ).json()
+        assert point["score"] == pytest.approx(actual["disease_class_score"])
+
+
+def test_batch_includes_fat_effect_without_full_explanation(client, patient):
+    response = client.post("/api/predict/batch", json={"records": [patient]}).json()
+    result = response["results"][0]["result"]
+    assert result["explanation"] is None
+    assert result["visceral_fat_effect"]["index"] == patient["visceral_fat"]
+    assert result["visceral_fat_effect"]["curve"] == []
+    individual = client.post("/api/predict?explain=false", json=patient).json()
+    assert result["visceral_fat_effect"] == individual["visceral_fat_effect"]
+
+
+def test_fat_effect_pdf_has_a_dedicated_visual_page(client, patient):
+    from io import BytesIO
+    from pypdf import PdfReader
+
+    response = client.post("/api/report", json=patient)
+    pages = PdfReader(BytesIO(response.content)).pages
+    assert len(pages) == 3
+    text = " ".join(pages[2].extract_text().split())
+    assert "Visceral fat, in focus" in text
+    assert "percentage points" in text
+    assert "generated" in text
+    assert "not a recommended or healthy index" in text

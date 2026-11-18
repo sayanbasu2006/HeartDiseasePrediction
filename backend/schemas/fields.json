@@ -1,5 +1,5 @@
 {
-  "version": "uci-cleveland-verified-v1",
+  "version": "cardiolens-14-inputs-v2",
   "source_url": "https://archive.ics.uci.edu/dataset/45/heart+disease",
   "fields": [
     {
@@ -427,6 +427,16 @@
         }
       ],
       "validationMessage": "A recorded stress-test result is required. “Not available” is a missing test result and cannot be assessed."
+    },
+    {
+      "key": "visceral_fat",
+      "label": "Visceral fat (device index)",
+      "group": 1,
+      "help": "Enter the visceral fat rating or index from your body-composition device. Use the device index rather than a visceral-fat area or percentage.",
+      "unit": "index",
+      "min": 0,
+      "step": 0.1,
+      "validationMessage": "A finite, non-negative visceral fat device index is required."
     }
   ]
 }

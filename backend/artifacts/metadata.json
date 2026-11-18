@@ -1,6 +1,6 @@
 {
-  "version": "1.0-704438dd0d",
-  "trained_at": "2026-11-03T17:17:29.839628+00:00",
+  "version": "2.0-bb5ec8e04e",
+  "trained_at": "2026-11-17T18:32:30.098210+00:00",
   "selected_model": "Calibrated OOF voting",
   "features": [
     "age",
@@ -15,7 +15,8 @@
     "oldpeak",
     "slope",
     "ca",
-    "thal"
+    "thal",
+    "visceral_fat"
   ],
   "dataset": {
     "raw_rows": 303,
@@ -26,7 +27,8 @@
       "1": 165,
       "0": 138
     },
-    "sha256": "7c3014365675306819510a49ff289efbec1d1a6a666a2dc7652f1547b383d859",
+    "sha256": "26e441adc88c81ed9e7bc0bd5b0e238b6dea22051c60d7c1eb0d162fac0e809f",
+    "observed_sha256": "7c3014365675306819510a49ff289efbec1d1a6a666a2dc7652f1547b383d859",
     "categories": {
       "sex": [
         0,
@@ -74,7 +76,23 @@
       "ca=4": 5,
       "thal=0": 2
     },
-    "provenance": "User-supplied CSV. Original cohort and category encoding documentation not supplied; labels remain literal dataset codes."
+    "feature_provenance": {
+      "age": "UCI Cleveland record",
+      "sex": "UCI Cleveland record",
+      "cp": "UCI Cleveland record",
+      "trestbps": "UCI Cleveland record",
+      "chol": "UCI Cleveland record",
+      "fbs": "UCI Cleveland record",
+      "restecg": "UCI Cleveland record",
+      "thalach": "UCI Cleveland record",
+      "exang": "UCI Cleveland record",
+      "oldpeak": "UCI Cleveland record",
+      "slope": "UCI Cleveland record",
+      "ca": "UCI Cleveland record",
+      "thal": "UCI Cleveland record",
+      "visceral_fat": "Generated device index, seed 20261117"
+    },
+    "provenance": "Cleveland records and verified source outcomes with a generated visceral-fat index. All 14 inputs enter the research model."
   },
   "development_rows": 241,
   "holdout_rows": 61,
@@ -135,6 +153,10 @@
     "thal": [
       0.0,
       3.0
+    ],
+    "visceral_fat": [
+      1.0,
+      31.0
     ]
   },
   "versions": {

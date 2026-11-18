@@ -78,6 +78,10 @@ export interface ClinicalField {
   validationMessage?: string;
 }
 export const fields: ClinicalField[] = catalogue.fields;
+export const assessmentInputCounts = {
+  required: fields.length,
+  total: fields.length,
+};
 export const syntheticFatField = {
   key: "visceral_fat",
   label: "Visceral fat (device index)",
@@ -123,4 +127,5 @@ export const order = [
   "slope",
   "ca",
   "thal",
+  "visceral_fat",
 ];

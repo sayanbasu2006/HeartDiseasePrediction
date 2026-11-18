@@ -73,8 +73,8 @@ def search(model, grid, X, y):
 
 def research_bma(X, y):
     specs = [
-        ["age", "trestbps", "chol"],
-        ["age", "trestbps", "chol", "thalach", "oldpeak"],
+        ["age", "trestbps", "chol", "visceral_fat"],
+        ["age", "trestbps", "chol", "thalach", "oldpeak", "visceral_fat"],
     ]
     entries = []
     fitted = []
@@ -162,7 +162,7 @@ def train(data=None, out=None):
         out / "model.joblib",
     )
     version = (
-        "1.0-"
+        "2.0-"
         + hashlib.sha256(
             (audit["sha256"] + name + sklearn.__version__).encode()
         ).hexdigest()[:10]

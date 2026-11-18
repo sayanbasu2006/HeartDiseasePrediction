@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
+import { assessmentInputCounts } from "@/lib/api";
 import { BrowserStorageControl } from "./BrowserStorageControl";
 import { Card, ErrorBox } from "./shared";
 import { useResource } from "./useResource";
@@ -29,9 +30,10 @@ export function AboutSection() {
         <Card>
           <h3>Where the data comes from</h3>
           <p>
-            The supplied heart.csv contains 303 records, 13 input features, and
-            a binary target. It contains 165 positive and 138 negative labels,
-            no missing cells, and one exact duplicate removed before splitting.
+            The Cleveland file contains 303 records,{" "}
+            {assessmentInputCounts.required} model inputs, and a binary outcome.
+            The visceral fat column contains generated indices used in training.
+            One duplicate was removed before splitting the data.
           </p>
           <p>
             Category labels were verified by matching all supplied records to

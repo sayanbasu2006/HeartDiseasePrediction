@@ -115,7 +115,6 @@ def model_info():
         **{k: v for k, v in m.items() if k != "split"},
         "dataset": {
             **m["dataset"],
-            "provenance": "User-supplied CSV matched to the primary UCI Cleveland reference. Category and outcome mappings are verified in a separate audit; no external clinical validation is supplied.",
         },
         "category_mapping": AUDIT,
         "target_interpretation": AUDIT["target_meanings"],
@@ -135,13 +134,13 @@ def distributions():
 
 
 @app.post("/api/predict", response_model=PredictionOutput)
-def prediction(patient: Patient):
-    return predict(patient)
+def prediction(patient: Patient, explain: bool = True):
+    return predict(patient, with_explanation=explain)
 
 
 @app.post("/api/synthetic/predict", response_model=SyntheticPredictionOutput)
-def synthetic_prediction(patient: SyntheticPatient):
-    return predict_synthetic(patient)
+def synthetic_prediction(patient: SyntheticPatient, explain: bool = True):
+    return predict_synthetic(patient, with_explanation=explain)
 
 
 @app.post("/api/explain", response_model=ExplanationOutput)
@@ -184,7 +183,7 @@ async def upload(file: UploadFile = File(...)):
 @app.get("/api/template")
 def template():
     buffer = io.StringIO()
-    csv.writer(buffer).writerow([FIELDS[f]["label"] for f in FEATURES] + ["Visceral fat (device index)"])
+    csv.writer(buffer).writerow([FIELDS[f]["label"] for f in FEATURES])
     return Response(
         buffer.getvalue(),
         media_type="text/csv",
@@ -194,6 +193,8 @@ def template():
 
 @app.post("/api/history/measurements")
 def history_create(payload: HistoryInput):
+    if os.environ.get("CARDIOLENS_PUBLIC_DEMO") == "1":
+        raise HTTPException(403, "Server history storage is unavailable in the hosted demo.")
     if not payload.consent:
         raise HTTPException(422, "Explicit storage consent is required.")
     store.save(payload.measurements)
@@ -202,11 +203,15 @@ def history_create(payload: HistoryInput):
 
 @app.get("/api/history/measurements")
 def history_read():
+    if os.environ.get("CARDIOLENS_PUBLIC_DEMO") == "1":
+        return {"measurements": [], "storage_available": False}
     return {"measurements": store.read()}
 
 
 @app.delete("/api/history/measurements")
 def history_delete():
+    if os.environ.get("CARDIOLENS_PUBLIC_DEMO") == "1":
+        raise HTTPException(403, "Server history storage is unavailable in the hosted demo.")
     store.clear()
     return {"deleted": True}
 
@@ -227,10 +232,12 @@ def history_analyze(payload: AnalysisInput):
             for i in range(60)
         ]
     else:
-        measurements = payload.measurements or [
-            Measurement.model_validate({k: v for k, v in r.items() if k != "id"})
-            for r in store.read()
-        ]
+        measurements = payload.measurements
+        if not measurements and os.environ.get("CARDIOLENS_PUBLIC_DEMO") != "1":
+            measurements = [
+                Measurement.model_validate({k: v for k, v in r.items() if k != "id"})
+                for r in store.read()
+            ]
     return {**analyze(measurements), "synthetic_demo": payload.demo}
 
 

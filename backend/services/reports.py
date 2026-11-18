@@ -1,7 +1,7 @@
 from io import BytesIO
 from datetime import datetime
 from html import escape
-from reportlab.graphics.shapes import Drawing, Rect, String, Line
+from reportlab.graphics.shapes import Drawing, Rect, String, Line, Circle, PolyLine
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
@@ -102,7 +102,7 @@ def make_report(result):
             label = (
                 "Visceral fat (simulated device index)"
                 if synthetic
-                else "Visceral fat (device index; not used by model)"
+                else "Visceral fat (device index)"
             )
         rows.append(
             [
@@ -213,6 +213,78 @@ def make_report(result):
             ]
         )
     story.extend(p(x) for x in result["limitations"])
+
+    effect = result.get("visceral_fat_effect")
+    if effect:
+        story.extend([
+            PageBreak(),
+            p("CardioLens AI", "Brand"),
+            p("Visceral fat, in focus", "Heading2"),
+            p("BODY COMPOSITION | INDIVIDUAL MODEL RESPONSE", "Heading3"),
+            p("The same record, with only the visceral fat index changed. All other submitted measurements stay fixed."),
+            Spacer(1, 18),
+        ])
+        difference = round(effect["difference"] * 100, 2)
+        difference_text = f"{difference:+.2f}" if difference else "0.00"
+        summary = Table([
+            [p("SUBMITTED INDEX", "TableHead"), p("REFERENCE INDEX", "TableHead"), p("SCORE DIFFERENCE", "TableHead")],
+            [p(f"{effect['index']:g} device index"), p(f"{effect['reference_index']:g} device index"), p(f"{difference_text} percentage points")],
+        ], colWidths=[168, 168, 169])
+        summary.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#102C46")),
+            ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#F4F6F6")),
+            ("TOPPADDING", (0, 0), (-1, -1), 12),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]))
+        story.extend([
+            summary,
+            Spacer(1, 14),
+            p(f"Reference: median index of {effect['reference_count']} development background records. This is a dataset comparison, not a recommended or healthy index."),
+            Spacer(1, 14),
+            p("One input. The model's response.", "Heading2"),
+            p(f"{score_name.capitalize()} / 10. Lines connect sampled model predictions."),
+        ])
+        points = effect["curve"]
+        if points:
+            drawing = Drawing(505, 230)
+            left, bottom, width, height = 35, 42, 450, 160
+            low = min(point["index"] for point in points)
+            high = max(point["index"] for point in points)
+
+            def x_position(index):
+                return left + (index - low) / max(high - low, 1e-9) * width
+
+            for tick in (0, 2.5, 5, 7.5, 10):
+                y = bottom + tick / 10 * height
+                drawing.add(Line(left, y, left + width, y, strokeColor=colors.HexColor("#DFE5E8")))
+                drawing.add(String(left - 8, y - 3, f"{tick:g}", textAnchor="end", fontSize=8, fillColor=colors.HexColor("#526273")))
+            coords = []
+            for point in points:
+                coords.extend([x_position(point["index"]), bottom + point["score"] * height])
+            drawing.add(PolyLine(coords, strokeColor=colors.HexColor("#102C46"), strokeWidth=2))
+            for index, score, filled in (
+                (effect["reference_index"], effect["reference_score"], False),
+                (effect["index"], effect["submitted_score"], True),
+            ):
+                x, y = x_position(index), bottom + score * height
+                drawing.add(Line(x, bottom, x, bottom + height, strokeColor=colors.HexColor("#84929C"), strokeDashArray=[3, 3]))
+                drawing.add(Circle(x, y, 4, fillColor=colors.HexColor("#102C46") if filled else colors.white, strokeColor=colors.HexColor("#102C46")))
+            for index in (low, (low + high) / 2, high):
+                drawing.add(String(x_position(index), bottom - 15, f"{index:.1f}", textAnchor="middle", fontSize=8, fillColor=colors.HexColor("#526273")))
+            drawing.add(String(260, 10, "Visceral fat device index", textAnchor="middle", fontSize=9, fillColor=colors.HexColor("#526273")))
+            story.extend([drawing, p("Filled marker: submitted index. Open marker: development reference.", "ReportMeta")])
+        story.extend([
+            Spacer(1, 12),
+            p(f"At the reference index: {effect['reference_score'] * 10:.2f} / 10. At the submitted index: {effect['submitted_score'] * 10:.2f} / 10."),
+            p(f"Development index range: {effect['development_range'][0]:g}-{effect['development_range'][1]:g}. This range describes training records, not a clinical reference interval."),
+            Spacer(1, 16),
+            p("Interpretation & data provenance", "Heading2"),
+            p(effect["method"]),
+            p("Device index scales differ by manufacturer. Percentage body fat, waist circumference and visceral fat area are not interchangeable with a device index. No universal healthy threshold is assigned here."),
+        ])
+        if not effect["development_range"][0] <= effect["index"] <= effect["development_range"][1]:
+            story.append(p("The submitted index is outside the development-data range. The model's response here has limited support."))
 
     def footer(canvas, doc):
         canvas.saveState()

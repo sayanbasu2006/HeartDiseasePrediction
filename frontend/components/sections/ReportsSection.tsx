@@ -2,13 +2,26 @@ import Link from "next/link";
 import { HeartPulse, ArrowUpRight, Check } from "lucide-react";
 import { useSession } from "@/components/provider";
 import { formatDate } from "@/lib/presentation";
-import { assessmentScoreLabel, diseaseScore } from "@/lib/api";
+import {
+  assessmentInputCounts,
+  assessmentScoreLabel,
+  diseaseScore,
+  fields,
+} from "@/lib/api";
+import { countSupportedInputs } from "@/lib/measurement-validation";
 import { Card, Empty } from "./shared";
 import { ReportButton } from "./ReportButton";
+import { VisceralFatSummary } from "./VisceralFatPanel";
 
 export function ReportsSection() {
   const { latest } = useSession();
   const synthetic = latest?.synthetic === true;
+  const requiredInputs = synthetic
+    ? assessmentInputCounts.total
+    : assessmentInputCounts.required;
+  const suppliedInputs = latest
+    ? countSupportedInputs(fields, latest.measurements)
+    : 0;
   return (
     <div className="grid prediction-grid">
       <Card>
@@ -50,21 +63,44 @@ export function ReportsSection() {
                   <h2>{(diseaseScore(latest) * 10).toFixed(2)} / 10</h2>
                 </div>
                 <div>
-                  <small>Input completeness</small>
-                  <h2>{synthetic ? "14 / 14" : "13 / 13"}</h2>
+                  <small>Required inputs supplied</small>
+                  <h2>
+                    {suppliedInputs} / {requiredInputs}
+                  </h2>
                 </div>
               </div>
+              <VisceralFatSummary result={latest} />
               <p className="caption">
                 {synthetic
                   ? "The simulated score has no medical interpretation."
                   : "Not a medical diagnosis. Not a future cardiovascular event probability."}
               </p>
             </div>
-            <ReportButton
-              measurements={latest.measurements}
-              demonstration={latest.demonstration}
-              synthetic={synthetic}
-            />
+            {suppliedInputs === requiredInputs ? (
+              <ReportButton
+                measurements={latest.measurements}
+                demonstration={latest.demonstration}
+                synthetic={synthetic}
+                modelVersion={
+                  typeof latest.model_version === "string"
+                    ? latest.model_version
+                    : undefined
+                }
+              />
+            ) : (
+              <div className="note">
+                <div>
+                  <p>
+                    This saved record does not contain all 14 required inputs.
+                    Complete a new assessment before exporting a matching
+                    report.
+                  </p>
+                  <Link href="/predict" className="text-link">
+                    Complete a new assessment <ArrowUpRight size={16} />
+                  </Link>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <Empty
@@ -84,6 +120,7 @@ export function ReportsSection() {
             "Model output and artifact version",
             "Input completeness",
             "Individual explanation summary",
+            "Visceral fat comparison and model response chart",
             "Dataset and model limitations",
             "Prominent research disclaimer",
           ].map((t) => (

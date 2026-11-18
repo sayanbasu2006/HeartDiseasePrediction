@@ -20,30 +20,31 @@ import {
   download,
   csv,
   fields,
+  assessmentInputCounts,
   order,
   fieldLabel,
   parseMeasurement,
   diseaseScore,
 } from "@/lib/api";
 import type { UploadDraft } from "@/lib/workspace-storage";
+import { isSupportedMeasurement } from "@/lib/measurement-validation";
 import { BrowserStorageControl } from "./BrowserStorageControl";
 import { Card, ErrorBox } from "./shared";
+import { VisceralFatSummary } from "./VisceralFatPanel";
+import { formatFatDifference } from "@/lib/visceral-fat";
 
 function invalidCell(key: string, value: unknown) {
-  if (key === "visceral_fat") {
-    if (value === undefined || value === null || value === "") return false;
-    return !Number.isFinite(Number(value)) || Number(value) < 0;
-  }
-  if (value === undefined || value === null || value === "") return true;
+  if (
+    value === undefined ||
+    value === null ||
+    (typeof value === "string" && value.trim() === "")
+  )
+    return true;
   if (key === "timestamp") return !Number.isFinite(Date.parse(String(value)));
   const field = fields.find((f) => f.key === key);
   const n = Number(parseMeasurement(key, value));
   if (!Number.isFinite(n)) return true;
-  if (field?.codes)
-    return !field.options?.some(
-      (o) => o.value === Number(parseMeasurement(key, value)) && o.supported,
-    );
-  return field ? n < (field.min ?? 0) || n > (field.max ?? Infinity) : false;
+  return field ? !isSupportedMeasurement(field, n) : false;
 }
 const timelineColumns = {
   timestamp: "Date and time",
@@ -91,9 +92,7 @@ export function UploadSection() {
   const mapping = file?.mapping ?? {};
   const mode = file?.mode ?? selectedMode;
   const predictionMode = mode === "prediction";
-  const targets = predictionMode
-    ? [...order, "visceral_fat"]
-    : Object.keys(timelineColumns);
+  const targets = predictionMode ? order : Object.keys(timelineColumns);
   const columnLabel = (key: string) =>
     predictionMode
       ? fieldLabel(key)
@@ -178,10 +177,7 @@ export function UploadSection() {
         const records = rows.map((r) =>
           Object.fromEntries(
             Object.entries(mapped(r)).filter(
-              ([k, v]) =>
-                (order.includes(k) || k === "visceral_fat") &&
-                v !== "" &&
-                v !== null,
+              ([k, v]) => order.includes(k) && v !== "" && v !== null,
             ),
           ),
         );
@@ -262,7 +258,10 @@ export function UploadSection() {
             />
             <span>
               <strong>Assess several records</strong>
-              <small>Each row needs all 13 clinical inputs.</small>
+              <small>
+                All {assessmentInputCounts.required} parameters are required,
+                including visceral fat.
+              </small>
             </span>
           </label>
           <label>
@@ -316,8 +315,9 @@ export function UploadSection() {
           {predictionMode ? (
             <>
               <p>
-                Use one row per record and include all 13 fields. The template
-                lists the accepted column names.
+                Use one row per record with all {assessmentInputCounts.required}{" "}
+                required fields, including the visceral fat device index. The
+                template lists all required columns.
               </p>
               <Button asChild variant="outline">
                 <a href="/api/template" download>
@@ -576,7 +576,7 @@ export function UploadSection() {
               <p>
                 {results.eligible} of {results.total} rows scored.{" "}
                 {results.total - results.eligible > 0 &&
-                  `${results.total - results.eligible} need corrections.`}
+                  `${results.total - results.eligible} ${results.total - results.eligible === 1 ? "needs" : "need"} corrections.`}
               </p>
             </div>
             <Button
@@ -592,6 +592,19 @@ export function UploadSection() {
                         : undefined,
                       label: r.result?.label,
                       model_version: r.result?.model_version,
+                      visceral_fat_index: r.result?.measurements.visceral_fat,
+                      visceral_fat_reference_index:
+                        r.result?.visceral_fat_effect?.reference_index,
+                      visceral_fat_reference_score:
+                        r.result?.visceral_fat_effect?.reference_score,
+                      visceral_fat_score_difference_pp: r.result
+                        ?.visceral_fat_effect
+                        ? Number(
+                            (
+                              r.result.visceral_fat_effect.difference * 100
+                            ).toFixed(2),
+                          )
+                        : undefined,
                       errors: r.errors
                         .map((e: any) => `${fieldLabel(e.field)}: ${e.message}`)
                         .join("; "),
@@ -631,6 +644,8 @@ export function UploadSection() {
                   <th>Row</th>
                   <th>Status</th>
                   <th>Disease-present score</th>
+                  <th>Visceral fat index</th>
+                  <th>Visceral fat effect</th>
                   <th>Dataset label / validation errors</th>
                 </tr>
               </thead>
@@ -648,6 +663,22 @@ export function UploadSection() {
                         ? `${(diseaseScore(r.result) * 10).toFixed(2)} / 10`
                         : "—"}
                     </td>
+                    <td>{r.result?.measurements.visceral_fat ?? "—"}</td>
+                    <td>
+                      {r.result?.visceral_fat_effect ? (
+                        <details className="vf-batch-detail">
+                          <summary>
+                            {formatFatDifference(
+                              r.result.visceral_fat_effect.difference,
+                            )}{" "}
+                            pp
+                          </summary>
+                          <VisceralFatSummary result={r.result} />
+                        </details>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td>
                       {r.result?.label ||
                         r.errors
@@ -663,7 +694,10 @@ export function UploadSection() {
           </div>
           <p className="caption">
             Experimental label predictions. Scores do not represent clinically
-            validated future event probabilities.
+            validated future event probabilities. Visceral fat effects compare
+            the submitted index with a development reference while other inputs
+            stay fixed. Values are percentage-point differences in model scores;
+            training indices are generated.
           </p>
         </Card>
       )}

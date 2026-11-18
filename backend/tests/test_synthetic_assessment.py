@@ -50,8 +50,11 @@ def test_synthetic_index_validation_keeps_default_prediction_contract(client, pa
     measurements = {**patient, "visceral_fat": index}
     assert client.post("/api/synthetic/predict", json=measurements).status_code == 422
     response = client.post("/api/predict", json=measurements)
-    assert response.status_code == 200
-    assert "synthetic" not in response.json()
+    if index is None:
+        assert response.status_code == 422
+    else:
+        assert response.status_code == 200
+        assert "synthetic" not in response.json()
 
 
 def test_synthetic_pdf_identifies_source_and_index(client):

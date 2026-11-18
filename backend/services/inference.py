@@ -1,9 +1,10 @@
 import json
+import hashlib
 from functools import lru_cache
 from datetime import datetime, timezone
 import joblib, numpy as np, pandas as pd, sklearn
-from backend.ml.data import ROOT, SYNTHETIC_MODEL
-from backend.schemas.clinical import Patient, SyntheticPatient, SYNTHETIC_FEATURES, DISCLAIMER
+from backend.ml.data import ROOT, CLEVELAND_DATASET, SYNTHETIC_MODEL
+from backend.schemas.clinical import Patient, SyntheticPatient, FEATURES, SYNTHETIC_FEATURES, DISCLAIMER
 from backend.schemas.labels import AUDIT, field_label
 
 
@@ -17,11 +18,16 @@ def artifacts():
         raise RuntimeError(
             "Model library version mismatch. Use the documented environment."
         )
-    if meta["dataset"]["sha256"] != AUDIT["local_sha256"]:
+    if meta["dataset"].get("observed_sha256") != AUDIT["local_sha256"]:
         raise RuntimeError(
             "The model dataset does not match the verified category dictionary."
         )
-    return joblib.load(directory / "model.joblib"), meta
+    if meta["dataset"]["sha256"] != hashlib.sha256(CLEVELAND_DATASET.read_bytes()).hexdigest():
+        raise RuntimeError("The model and its 14-parameter training dataset do not match.")
+    bundle = joblib.load(directory / "model.joblib")
+    if bundle["features"] != FEATURES or meta["features"] != FEATURES:
+        raise RuntimeError("The model needs training with all 14 required inputs.")
+    return bundle, meta
 
 
 @lru_cache(maxsize=1)
@@ -91,15 +97,29 @@ def predict(patient: Patient, with_explanation=True):
     return _predict(patient, *artifacts(), with_explanation=with_explanation)
 
 
-def predict_synthetic(patient: SyntheticPatient):
+def predict_synthetic(patient: SyntheticPatient, with_explanation=True):
     bundle = synthetic_artifact()
-    return _predict(patient, bundle, bundle["metadata"], with_explanation=True)
+    return _predict(patient, bundle, bundle["metadata"], with_explanation=with_explanation)
 
 
 def _predict(patient, a, m, *, with_explanation):
     data = patient.model_dump()
     features = a["features"]
-    p = float(a["model"].predict_proba(pd.DataFrame([data], columns=features))[0, 1])
+    # Compare the same record against one development-background reference value.
+    # This is model sensitivity, not a causal effect or a healthy-index threshold.
+    reference_index = float(a["background"]["visceral_fat"].median())
+    reference = {**data, "visceral_fat": reference_index}
+    lower, upper = map(float, m["ranges"]["visceral_fat"])
+    curve_indices = sorted({
+        *np.linspace(lower, upper, 9).tolist(),
+        reference_index,
+        data["visceral_fat"],
+    }) if with_explanation else []
+    records = [data, reference, *[
+        {**data, "visceral_fat": index} for index in curve_indices
+    ]]
+    scores = 1.0 - a["model"].predict_proba(pd.DataFrame(records, columns=features))[:, 1]
+    p = float(1.0 - scores[0])
     positive = p >= m["threshold"]
     synthetic = m.get("synthetic", False)
     if synthetic:
@@ -118,8 +138,7 @@ def _predict(patient, a, m, *, with_explanation):
             DISCLAIMER,
             "Categories and outcome meanings were verified against the UCI Cleveland source. This model has no external clinical validation.",
         ]
-        if patient.visceral_fat is not None:
-            warnings.append("Visceral fat is recorded as a device index and is not used by this model.")
+        warnings.append("The training file's visceral fat indices are generated values. Measured visceral fat effects have not been validated.")
     for f in features:
         value = data[f]
         if not m["ranges"][f][0] <= value <= m["ranges"][f][1]:
@@ -142,6 +161,26 @@ def _predict(patient, a, m, *, with_explanation):
         "measurements": data,
         "limitations": warnings,
         "explanation": explain(data, a, synthetic=synthetic) if with_explanation else None,
+        "visceral_fat_effect": {
+            "index": data["visceral_fat"],
+            "reference_index": reference_index,
+            "reference_score": float(scores[1]),
+            "submitted_score": float(scores[0]),
+            "difference": float(scores[0] - scores[1]),
+            "development_range": [lower, upper],
+            "reference_count": len(a["background"]),
+            "curve": [
+                {"index": index, "score": float(score)}
+                for index, score in zip(curve_indices, scores[2:])
+            ],
+            "method": (
+                "Only visceral fat changes; all other submitted inputs stay fixed. "
+                "The reference is the median visceral fat index of the development "
+                "background records, not a clinical target. The difference is in "
+                "model-score units, not a change in personal medical risk. "
+                "Training visceral fat values are generated."
+            ),
+        },
     }
     if synthetic:
         result.update(

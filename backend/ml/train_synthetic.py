@@ -17,7 +17,8 @@ from backend.ml.models import pipeline
 from backend.schemas.clinical import (
     BOUNDS,
     CONTINUOUS,
-    FEATURES,
+    OBSERVED_FEATURES,
+    OBSERVED_CONTINUOUS,
     SYNTHETIC_FEATURES,
     SYNTHETIC_INDEX_MAX,
     SYNTHETIC_INDEX_MIN,
@@ -99,16 +100,18 @@ def train(dataset=SYNTHETIC_DATASET, artifact=SYNTHETIC_MODEL):
     sha256 = hashlib.sha256(csv.encode("utf-8")).hexdigest()
 
     model = pipeline(
-        LogisticRegression(max_iter=2000), continuous=[*CONTINUOUS, "visceral_fat"]
+        LogisticRegression(max_iter=2000), continuous=CONTINUOUS
     ).fit(development[SYNTHETIC_FEATURES], development[TARGET])
-    baseline = pipeline(LogisticRegression(max_iter=2000)).fit(
-        development[FEATURES], development[TARGET]
+    baseline = pipeline(
+        LogisticRegression(max_iter=2000), continuous=OBSERVED_CONTINUOUS
+    ).fit(
+        development[OBSERVED_FEATURES], development[TARGET]
     )
     metrics = {
         "training_rows": TRAIN_ROWS,
         "holdout_rows": HOLDOUT_ROWS,
         "with_visceral_fat": evaluate(model, holdout, SYNTHETIC_FEATURES),
-        "without_visceral_fat": evaluate(baseline, holdout, FEATURES),
+        "without_visceral_fat": evaluate(baseline, holdout, OBSERVED_FEATURES),
     }
     bundle = {
         "model": model,

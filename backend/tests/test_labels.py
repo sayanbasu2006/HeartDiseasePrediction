@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from backend.ml.data import ROOT, load_data
-from backend.schemas.clinical import Patient, FEATURES
+from backend.schemas.clinical import Patient, FEATURES, OBSERVED_FEATURES
 from backend.schemas.labels import CATALOGUE, AUDIT, display_value
 
 
@@ -19,7 +19,7 @@ def test_source_mapping_audit():
     source = pd.read_csv(
         ROOT / "data/reference/processed.cleveland.data",
         header=None,
-        names=FEATURES + ["diagnosis"],
+        names=OBSERVED_FEATURES + ["diagnosis"],
         na_values="?",
     )
     local = pd.read_csv(ROOT / "data/heart.csv").reset_index(names="row")
@@ -108,7 +108,7 @@ def test_friendly_csv_template_round_trip(client, patient):
             "file": (
                 "friendly.csv",
                 header
-                + "63,Male,Typical angina,145,233,Yes,Possible heart-muscle enlargement (LVH),150,No,2.3,Downward slope,None,Fixed defect\n",
+                + f"63,Male,Typical angina,145,233,Yes,Possible heart-muscle enlargement (LVH),150,No,2.3,Downward slope,None,Fixed defect,{patient['visceral_fat']}\n",
             )
         },
     )

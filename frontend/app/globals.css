@@ -2931,6 +2931,30 @@ select:focus-visible {
   font-size: 12px;
   margin-top: 12px;
 }
+.scenario-context {
+  padding: 16px 18px;
+  margin: 0 0 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.scenario-context > strong,
+.comparison .scenario-interpretation > strong {
+  display: block;
+  color: var(--ink);
+  font-size: inherit;
+  margin: 0 0 4px;
+  letter-spacing: normal;
+}
+.comparison .scenario-interpretation {
+  margin: 10px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--border);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.7;
+}
 .comparison > .button {
   grid-column: 1/-1;
   margin-top: 15px;

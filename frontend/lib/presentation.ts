@@ -1,4 +1,6 @@
 /** Presentation-only copy and locale conventions. Model keys remain in fields.generated.json. */
+import { assessmentInputCounts } from "./api";
+
 export const locale = "en-IN";
 export const navigationItems = [
   { section: "home", href: "/", label: "Home" },
@@ -35,7 +37,7 @@ export const homeCopy = {
     },
     {
       title: "Review and validate inputs",
-      text: "Check all 13 required inputs, their units, and the recorded test results.",
+      text: `Check all ${assessmentInputCounts.required} required inputs, including the visceral fat index, and their units.`,
     },
     {
       title: "Run the research assessment",

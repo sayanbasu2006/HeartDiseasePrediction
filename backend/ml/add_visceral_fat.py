@@ -15,7 +15,6 @@ SEED = 20261117
 
 
 def add_reference_indices(path=CLEVELAND_DATASET):
-    load_data(path)
     header, *rows = observed_csv_bytes(path).splitlines(keepends=True)
     header_fields = header.rstrip(b"\r\n")
     enriched = [header_fields + GENERATED_FAT_SUFFIX + header[len(header_fields):]]
@@ -28,6 +27,7 @@ def add_reference_indices(path=CLEVELAND_DATASET):
         suffix = f",{indices[row]},generated".encode("ascii")
         enriched.append(row + suffix + line[len(row):])
     write_atomically(path, lambda temporary: temporary.write_bytes(b"".join(enriched)))
+    load_data(path)
 
 
 if __name__ == "__main__":

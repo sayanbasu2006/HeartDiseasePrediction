@@ -1,9 +1,8 @@
 from pathlib import Path
-from io import BytesIO
 from tempfile import NamedTemporaryFile
 import hashlib
 import pandas as pd
-from backend.schemas.clinical import FEATURES, CATEGORIES
+from backend.schemas.clinical import FEATURES, OBSERVED_FEATURES, CATEGORIES
 
 ROOT = Path(__file__).resolve().parents[1]
 CLEVELAND_DATASET = ROOT / "data/heart.csv"
@@ -40,11 +39,19 @@ def observed_csv_bytes(path):
 
 def load_data(path=CLEVELAND_DATASET):
     source = observed_csv_bytes(path)
-    raw = pd.read_csv(BytesIO(source))
-    if list(raw.columns) != FEATURES + ["target"]:
-        raise ValueError("Unexpected feature names or order.")
+    raw = pd.read_csv(path)
+    if set(raw.columns) not in (
+        set(FEATURES + ["target"]),
+        set(FEATURES + ["target", "visceral_fat_source"]),
+    ):
+        raise ValueError("Unexpected training columns. All 14 model inputs and target are required.")
+    raw = raw[FEATURES + ["target"]]
     if raw.isna().any().any():
         raise ValueError("Training CSV has missing values; inspect source.")
+    if not raw.visceral_fat.map(
+        lambda value: isinstance(value, (int, float)) and 0 <= value < float("inf")
+    ).all():
+        raise ValueError("Visceral fat must contain finite, non-negative device indices.")
     for col, codes in {**CATEGORIES, "target": [0, 1]}.items():
         if not raw[col].isin(codes).all():
             raise ValueError(f"Unsupported category: {col}")
@@ -55,12 +62,17 @@ def load_data(path=CLEVELAND_DATASET):
         "duplicates_removed": len(raw) - len(clean),
         "null_cells": int(raw.isna().sum().sum()),
         "class_counts": {str(k): int(v) for k, v in raw.target.value_counts().items()},
-        "sha256": hashlib.sha256(source).hexdigest(),
+        "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+        "observed_sha256": hashlib.sha256(source).hexdigest(),
         "categories": CATEGORIES,
         "unusual_codes": {
             "ca=4": int((raw.ca == 4).sum()),
             "thal=0": int((raw.thal == 0).sum()),
         },
-        "provenance": "User-supplied CSV. Original cohort and category encoding documentation not supplied; labels remain literal dataset codes.",
+        "feature_provenance": {
+            **{feature: "UCI Cleveland record" for feature in OBSERVED_FEATURES},
+            "visceral_fat": "Generated device index, seed 20261117",
+        },
+        "provenance": "Cleveland records and verified source outcomes with a generated visceral-fat index. All 14 inputs enter the research model.",
     }
     return clean, audit

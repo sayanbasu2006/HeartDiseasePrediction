@@ -46,7 +46,7 @@ export function ClinicalEntry({
       <p>
         {f.options
           ? "Select the finding as recorded in your clinical report. An unknown or unsupported choice cannot be assessed."
-          : `Accepted input: ${f.min}–${f.max} ${f.unit || ""}${f.key === "age" ? "; whole years only" : ""}. These are input constraints, not clinical reference ranges.`}
+          : `Accepted input: ${f.min}${f.max === undefined ? " or higher" : `–${f.max}`} ${f.unit || ""}${f.key === "age" ? "; whole years only" : ""}. These are input constraints, not clinical reference ranges.`}
       </p>
     </details>
   );
@@ -80,7 +80,9 @@ export function ClinicalEntry({
       </fieldset>
     );
   return (
-    <div className={`field clinical-entry ${invalid ? "has-error" : ""}`}>
+    <div
+      className={`field clinical-entry ${f.key === "visceral_fat" ? "vf-entry" : ""} ${invalid ? "has-error" : ""}`}
+    >
       <label htmlFor={f.key}>
         {f.label}
         <span className="field-required">

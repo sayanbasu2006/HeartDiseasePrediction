@@ -77,6 +77,58 @@ def test_predict_and_explanation(client, patient):
     assert client.get("/api/history/measurements").json()["measurements"] == []
 
 
+def test_hypothetical_comparison_uses_the_same_model_and_reports_range_limits(client, patient):
+    full = client.post("/api/predict", json=patient).json()
+    score_only = client.post("/api/predict?explain=false", json=patient).json()
+    assert score_only["disease_class_score"] == full["disease_class_score"]
+    assert score_only["model_version"] == full["model_version"]
+    assert score_only["explanation"] is None
+
+    adjusted = client.post("/api/predict?explain=false", json={**patient, "age": 20})
+    assert adjusted.status_code == 200
+    result = adjusted.json()
+    assert result["disease_class_score"] != full["disease_class_score"]
+    assert "Age is outside the development-data range." in result["limitations"]
+
+
+def test_age_comparison_preserves_the_models_disease_class_score(client, patient):
+    artifact, metadata = artifacts()
+    records = [{**patient, "age": age} for age in (63, 76)]
+    probabilities = artifact["model"].predict_proba(
+        pd.DataFrame(records, columns=FEATURES)
+    )
+    disease_column = list(artifact["model"].classes_).index(0)
+    scores = []
+    for record, probability in zip(records, probabilities):
+        response = client.post("/api/predict?explain=false", json=record)
+        assert response.status_code == 200
+        result = response.json()
+        assert result["measurements"]["age"] == record["age"]
+        assert result["model_version"] == metadata["version"]
+        assert result["disease_class_score"] == pytest.approx(probability[disease_column])
+        assert result["disease_class_score"] + result["model_score"] == pytest.approx(1)
+        scores.append(result["disease_class_score"])
+    # Preserve the learned model response, including a possible decrease with age.
+    assert scores[1] - scores[0] == pytest.approx(
+        probabilities[1, disease_column] - probabilities[0, disease_column]
+    )
+
+
+def test_hosted_demo_uses_only_submitted_history(client, monkeypatch):
+    reading = {"timestamp": "2026-11-17T08:00:00Z", "heart_rate": 70}
+    payload = {"consent": True, "measurements": [reading]}
+    assert client.post("/api/history/measurements", json=payload).status_code == 200
+
+    monkeypatch.setenv("CARDIOLENS_PUBLIC_DEMO", "1")
+    assert client.get("/api/history/measurements").json() == {
+        "measurements": [], "storage_available": False,
+    }
+    assert client.post("/api/history/measurements", json=payload).status_code == 403
+    assert client.delete("/api/history/measurements").status_code == 403
+    assert client.post("/api/history/analyze", json={}).json()["count"] == 0
+    assert client.post("/api/history/analyze", json={"measurements": [reading]}).json()["count"] == 1
+
+
 @pytest.mark.parametrize(
     "change",
     [
@@ -121,7 +173,7 @@ def test_upload_mapping_and_batch(client, patient):
     result = client.post(
         "/api/predict/batch", json={"records": [patient, {"age": 44}]}
     ).json()
-    assert result["eligible"] == 1 and len(result["results"][1]["errors"]) == 12
+    assert result["eligible"] == 1 and len(result["results"][1]["errors"]) == len(FEATURES) - 1
     assert (
         client.post(
             "/api/upload/validate",

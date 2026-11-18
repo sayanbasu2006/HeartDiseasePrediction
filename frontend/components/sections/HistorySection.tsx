@@ -15,6 +15,7 @@ import { formatDate } from "@/lib/presentation";
 import { api, post, download, csv } from "@/lib/api";
 import { Card, ErrorBox, Empty, Stat } from "./shared";
 import { useResource } from "./useResource";
+import { localDateBounds } from "@/lib/date-range";
 
 function RecordedSummary({
   data,
@@ -78,6 +79,8 @@ function RecordedSummary({
 }
 export function HistorySection() {
   const history = useResource("/history/measurements");
+  const hostedDemo = history.data?.storage_available === false;
+  const storageAvailable = !!history.data && !hostedDemo;
   const { temporary, setTemporary } = useSession();
   const [analysis, setAnalysis] = useState<any>(null);
   const [demo, setDemo] = useState(false);
@@ -108,9 +111,13 @@ export function HistorySection() {
   }, [demo, history.data, temporary]);
   async function sample() {
     setBusy(true);
+    setError("");
     try {
       setAnalysis(await post("/history/analyze", { demo: true }));
       setDemo(true);
+      setMetric("heart_rate");
+      setFrom("");
+      setTo("");
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -118,9 +125,12 @@ export function HistorySection() {
     }
   }
   async function restore() {
+    setError("");
     setDemo(false);
-    setTemporary(null);
+    if (!demo) setTemporary(null);
     setAnalysis(null);
+    setFrom("");
+    setTo("");
     history.reload();
   }
   async function add(e: React.FormEvent<HTMLFormElement>) {
@@ -141,7 +151,7 @@ export function HistorySection() {
     setBusy(true);
     setError("");
     try {
-      if (consent) {
+      if (consent && storageAvailable) {
         await post("/history/measurements", {
           consent: true,
           measurements: [record],
@@ -155,7 +165,9 @@ export function HistorySection() {
         setTemporary({ records, analysis: a });
         setAnalysis(a);
         setMessage(
-          "Measurement analyzed. You can save it to measurement history below.",
+          storageAvailable
+            ? "Measurement analyzed. You can save it to measurement history below."
+            : "Measurement analyzed. Export your readings to keep a copy.",
         );
       }
       setDemo(false);
@@ -168,7 +180,7 @@ export function HistorySection() {
     }
   }
   async function saveTemporary() {
-    if (!temporary) return;
+    if (!temporary || !storageAvailable) return;
     setError("");
     setBusy(true);
     try {
@@ -197,19 +209,16 @@ export function HistorySection() {
       setError(e.message);
     }
   }
+  const { start, end } = localDateBounds(from, to);
   const data = (analysis?.trends?.[metric] || []).filter(
-    (r: any) =>
-      (!from || r.time >= new Date(from).getTime()) &&
-      (!to || r.time < new Date(to).getTime() + 86400000),
+    (r: any) => r.time >= start && r.time < end,
   );
   const records = demo
     ? []
     : temporary?.records || history.data?.measurements || [];
   const temporalFiltered =
     analysis?.hmm?.posterior?.filter(
-      (r: any) =>
-        (!from || r.time >= new Date(from).getTime()) &&
-        (!to || r.time < new Date(to).getTime() + 86400000),
+      (r: any) => r.time >= start && r.time < end,
     ) || [];
   return (
     <>
@@ -225,7 +234,11 @@ export function HistorySection() {
           </Button>
           {(demo || temporary) && (
             <Button variant="outline" onClick={restore}>
-              Show saved history
+              {demo
+                ? "Close sample timeline"
+                : hostedDemo
+                  ? "Clear timeline"
+                  : "Show saved history"}
             </Button>
           )}
         </div>
@@ -238,16 +251,24 @@ export function HistorySection() {
             <Download size={16} />
             Export
           </Button>
-          <Button
-            variant="ghost"
-            onClick={remove}
-            disabled={!history.data?.measurements?.length}
-          >
-            <Trash2 size={17} />
-            Delete saved data
-          </Button>
+          {storageAvailable && (
+            <Button
+              variant="ghost"
+              onClick={remove}
+              disabled={!history.data?.measurements?.length}
+            >
+              <Trash2 size={17} />
+              Delete saved data
+            </Button>
+          )}
         </div>
       </div>
+      {hostedDemo && (
+        <p className="caption">
+          The hosted demo analyzes readings for your session. Export them to
+          keep a copy.
+        </p>
+      )}
       {demo && (
         <div className="demo-banner">
           <FlaskConical size={19} />
@@ -261,21 +282,26 @@ export function HistorySection() {
           <div>
             <strong>Temporary measurements</strong>
             <p>
-              These records will disappear on reload. Saving them requires your
-              explicit consent below.
+              {storageAvailable
+                ? "Save to measurement history with your consent, or export a copy."
+                : "Your readings are available in this browser and can be exported."}
             </p>
           </div>
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-            />
-            I consent to local storage
-          </label>
-          <Button disabled={!consent || busy} onClick={saveTemporary}>
-            Save locally
-          </Button>
+          {storageAvailable && (
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+              />
+              I consent to local storage
+            </label>
+          )}
+          {storageAvailable && (
+            <Button disabled={!consent || busy} onClick={saveTemporary}>
+              Save locally
+            </Button>
+          )}
         </div>
       )}
       {showForm && (
@@ -310,16 +336,20 @@ export function HistorySection() {
                 </label>
               ))}
             </div>
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-              />
-              I consent to saving these measurements in the local database.
-            </label>
+            {storageAvailable && (
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                />
+                I consent to saving these measurements in the local database.
+              </label>
+            )}
             <Button disabled={busy} type="submit">
-              {consent ? "Save measurement" : "Analyze without saving"}
+              {consent && storageAvailable
+                ? "Save measurement"
+                : "Analyze without saving"}
             </Button>
           </form>
         </Card>
@@ -420,7 +450,7 @@ export function HistorySection() {
             {metric === "visceral_fat" && (
               <p className="caption">
                 Compare readings from the same device and rating scale. Visceral
-                fat is not used by the heart-disease classifier or HMM.
+                fat is included in the 14-parameter assessment model.
               </p>
             )}
           </>

@@ -111,10 +111,12 @@ export function Trend({
               strokeDasharray="4 4"
             />
           )}
-          {brush && (
+          {brush && data.length > 1 && (
             <Brush
               dataKey="time"
-              height={22}
+              ariaLabel={`Adjust the chart date range between ${formatDate(data[0].time)} and ${formatDate(data[data.length - 1].time)} using the left and right arrow keys`}
+              height={28}
+              travellerWidth={12}
               stroke="var(--teal)"
               fill="var(--card)"
               tickFormatter={(v) => formatDate(v)}

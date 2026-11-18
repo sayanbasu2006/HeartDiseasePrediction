@@ -1,15 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowRight,
-  Menu,
-  Moon,
-  Sun,
-  X,
-  FlaskConical,
-  ArrowUpRight,
-} from "lucide-react";
+import { ArrowRight, Menu, Moon, Sun, X, ArrowUpRight } from "lucide-react";
 import { navigationItems, workspaceItems } from "@/lib/presentation";
 
 export function Brand({ footer = false }: { footer?: boolean }) {
@@ -84,12 +76,6 @@ export function SiteHeader({
         Skip to content
       </a>
       <header className="site-header">
-        <div className="institution-strip">
-          <span>
-            <FlaskConical size={13} /> Independent research prototype
-          </span>
-          <span>For education & research · Not a medical diagnosis</span>
-        </div>
         <div className="site-navigation">
           <Brand />
           <nav className="primary-navigation" aria-label="Main navigation">

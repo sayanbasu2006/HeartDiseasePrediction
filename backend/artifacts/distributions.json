@@ -1617,6 +1617,132 @@
         "value": 3.0,
         "count": 117
       }
+    ],
+    "visceral_fat": [
+      {
+        "value": 1.0,
+        "count": 9
+      },
+      {
+        "value": 2.0,
+        "count": 7
+      },
+      {
+        "value": 3.0,
+        "count": 10
+      },
+      {
+        "value": 4.0,
+        "count": 10
+      },
+      {
+        "value": 5.0,
+        "count": 9
+      },
+      {
+        "value": 6.0,
+        "count": 15
+      },
+      {
+        "value": 7.0,
+        "count": 14
+      },
+      {
+        "value": 8.0,
+        "count": 6
+      },
+      {
+        "value": 9.0,
+        "count": 10
+      },
+      {
+        "value": 10.0,
+        "count": 13
+      },
+      {
+        "value": 11.0,
+        "count": 12
+      },
+      {
+        "value": 12.0,
+        "count": 9
+      },
+      {
+        "value": 13.0,
+        "count": 9
+      },
+      {
+        "value": 14.0,
+        "count": 7
+      },
+      {
+        "value": 15.0,
+        "count": 7
+      },
+      {
+        "value": 16.0,
+        "count": 12
+      },
+      {
+        "value": 17.0,
+        "count": 13
+      },
+      {
+        "value": 18.0,
+        "count": 9
+      },
+      {
+        "value": 19.0,
+        "count": 12
+      },
+      {
+        "value": 20.0,
+        "count": 10
+      },
+      {
+        "value": 21.0,
+        "count": 4
+      },
+      {
+        "value": 22.0,
+        "count": 12
+      },
+      {
+        "value": 23.0,
+        "count": 13
+      },
+      {
+        "value": 24.0,
+        "count": 8
+      },
+      {
+        "value": 25.0,
+        "count": 5
+      },
+      {
+        "value": 26.0,
+        "count": 10
+      },
+      {
+        "value": 27.0,
+        "count": 10
+      },
+      {
+        "value": 28.0,
+        "count": 15
+      },
+      {
+        "value": 29.0,
+        "count": 8
+      },
+      {
+        "value": 30.0,
+        "count": 6
+      },
+      {
+        "value": 31.0,
+        "count": 8
+      }
     ]
   },
   "correlation": {
@@ -1633,7 +1759,8 @@
       "oldpeak": 0.206,
       "slope": -0.164,
       "ca": 0.302,
-      "thal": 0.065
+      "thal": 0.065,
+      "visceral_fat": 0.033
     },
     "sex": {
       "age": -0.095,
@@ -1648,7 +1775,8 @@
       "oldpeak": 0.098,
       "slope": -0.033,
       "ca": 0.113,
-      "thal": 0.211
+      "thal": 0.211,
+      "visceral_fat": -0.05
     },
     "cp": {
       "age": -0.063,
@@ -1663,7 +1791,8 @@
       "oldpeak": -0.147,
       "slope": 0.117,
       "ca": -0.195,
-      "thal": -0.16
+      "thal": -0.16,
+      "visceral_fat": 0.046
     },
     "trestbps": {
       "age": 0.283,
@@ -1678,7 +1807,8 @@
       "oldpeak": 0.195,
       "slope": -0.123,
       "ca": 0.099,
-      "thal": 0.063
+      "thal": 0.063,
+      "visceral_fat": -0.022
     },
     "chol": {
       "age": 0.207,
@@ -1693,7 +1823,8 @@
       "oldpeak": 0.05,
       "slope": 0.0,
       "ca": 0.087,
-      "thal": 0.097
+      "thal": 0.097,
+      "visceral_fat": 0.041
     },
     "fbs": {
       "age": 0.119,
@@ -1708,7 +1839,8 @@
       "oldpeak": 0.005,
       "slope": -0.059,
       "ca": 0.145,
-      "thal": -0.033
+      "thal": -0.033,
+      "visceral_fat": 0.052
     },
     "restecg": {
       "age": -0.112,
@@ -1723,7 +1855,8 @@
       "oldpeak": -0.056,
       "slope": 0.09,
       "ca": -0.083,
-      "thal": -0.01
+      "thal": -0.01,
+      "visceral_fat": -0.041
     },
     "thalach": {
       "age": -0.395,
@@ -1738,7 +1871,8 @@
       "oldpeak": -0.342,
       "slope": 0.385,
       "ca": -0.228,
-      "thal": -0.095
+      "thal": -0.095,
+      "visceral_fat": 0.024
     },
     "exang": {
       "age": 0.093,
@@ -1753,7 +1887,8 @@
       "oldpeak": 0.287,
       "slope": -0.256,
       "ca": 0.125,
-      "thal": 0.206
+      "thal": 0.206,
+      "visceral_fat": 0.045
     },
     "oldpeak": {
       "age": 0.206,
@@ -1768,7 +1903,8 @@
       "oldpeak": 1.0,
       "slope": -0.576,
       "ca": 0.237,
-      "thal": 0.209
+      "thal": 0.209,
+      "visceral_fat": 0.081
     },
     "slope": {
       "age": -0.164,
@@ -1783,7 +1919,8 @@
       "oldpeak": -0.576,
       "slope": 1.0,
       "ca": -0.092,
-      "thal": -0.103
+      "thal": -0.103,
+      "visceral_fat": -0.082
     },
     "ca": {
       "age": 0.302,
@@ -1798,7 +1935,8 @@
       "oldpeak": 0.237,
       "slope": -0.092,
       "ca": 1.0,
-      "thal": 0.16
+      "thal": 0.16,
+      "visceral_fat": -0.031
     },
     "thal": {
       "age": 0.065,
@@ -1813,7 +1951,24 @@
       "oldpeak": 0.209,
       "slope": -0.103,
       "ca": 0.16,
-      "thal": 1.0
+      "thal": 1.0,
+      "visceral_fat": -0.046
+    },
+    "visceral_fat": {
+      "age": 0.033,
+      "sex": -0.05,
+      "cp": 0.046,
+      "trestbps": -0.022,
+      "chol": 0.041,
+      "fbs": 0.052,
+      "restecg": -0.041,
+      "thalach": 0.024,
+      "exang": 0.045,
+      "oldpeak": 0.081,
+      "slope": -0.082,
+      "ca": -0.031,
+      "thal": -0.046,
+      "visceral_fat": 1.0
     }
   }
 }

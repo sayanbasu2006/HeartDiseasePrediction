@@ -13,7 +13,7 @@ import {
   Check,
   Info,
 } from "lucide-react";
-import { api, fields } from "@/lib/api";
+import { api, assessmentInputCounts, fields } from "@/lib/api";
 import { homeCopy } from "@/lib/presentation";
 type Evidence = {
   holdout: { accuracy: number; roc_auc: number; n: number; name: string };
@@ -117,7 +117,8 @@ export function Landing() {
       </section>
       <div className="principles-strip">
         <span>
-          <FileCheck2 size={18} /> 13 required clinical inputs
+          <FileCheck2 size={18} /> {assessmentInputCounts.total} required
+          parameters, including visceral fat
         </span>
         <span>
           <Layers size={18} /> Interpretable model contributions
@@ -165,7 +166,7 @@ export function Landing() {
           </Link>
         </div>
         <div className="indicator-grid">
-          {["trestbps", "chol", "thalach", "fbs"].map((key, i) => {
+          {["trestbps", "chol", "thalach", "visceral_fat"].map((key, i) => {
             const field = fields.find((f) => f.key === key)!;
             return (
               <article key={key}>
@@ -288,7 +289,10 @@ export function Landing() {
             <br />
             Explore with perspective.
           </h2>
-          <p>Have all 13 clinical measurements and findings ready.</p>
+          <p>
+            Have all {assessmentInputCounts.required} measurements and findings
+            ready, including your visceral fat index.
+          </p>
         </div>
         <div>
           <Link href="/predict" className="button primary">

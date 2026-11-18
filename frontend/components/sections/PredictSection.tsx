@@ -27,29 +27,25 @@ import {
 } from "@/lib/api";
 import { Card, ErrorBox } from "./shared";
 import { AssessmentResult } from "./AssessmentResult";
+import { VisceralFatGuide } from "./VisceralFatPanel";
 import { BrowserStorageControl } from "./BrowserStorageControl";
+import { isSupportedMeasurement } from "@/lib/measurement-validation";
 
 const patientShape: Record<string, z.ZodType> = Object.fromEntries(
   fields.map((f) => [
     f.key,
     z
-      .number({ error: `Enter a supported ${f.label.toLowerCase()}.` })
+      .number({
+        error:
+          f.validationMessage || `Enter a supported ${f.label.toLowerCase()}.`,
+      })
       .refine(
-        (v) =>
-          Number.isFinite(v) &&
-          ("codes" in f && f.codes
-            ? f.codes.includes(v) &&
-              !!f.options?.some((o) => o.value === v && o.supported)
-            : v >= (f.min ?? 0) && v <= (f.max ?? 1000)) &&
-          (f.key !== "age" || Number.isInteger(v)),
+        (v) => isSupportedMeasurement(f, v),
         f.validationMessage || `Choose a recorded ${f.label.toLowerCase()}.`,
       ),
   ]),
 );
-const patientSchema = z.object({
-  ...patientShape,
-  visceral_fat: z.number().finite().nonnegative().optional(),
-});
+const patientSchema = z.object(patientShape);
 const syntheticFatSchema = z
   .number()
   .min(syntheticFatField.min)
@@ -57,12 +53,8 @@ const syntheticFatSchema = z
 const syntheticPatientSchema = patientSchema.extend({
   visceral_fat: syntheticFatSchema,
 });
-const syntheticFields = [...fields, syntheticFatField];
 const emptyValues = Object.fromEntries(
-  [...fields.map(({ key }) => key), "visceral_fat"].map((key) => [
-    key,
-    undefined,
-  ]),
+  fields.map(({ key }) => [key, undefined]),
 );
 export function PredictSection() {
   const { storage } = useSession();
@@ -102,10 +94,10 @@ function PredictForm() {
       Object.keys(values).length ? { values, step, example, synthetic } : null,
     );
   }, [selectedValues, step, example, synthetic, result, setAssessmentDraft]);
-  const requiredFields = synthetic ? syntheticFields : fields;
+  const requiredFields = fields;
   const completedFields = requiredFields.filter(
     ({ key }) =>
-      (key === "visceral_fat"
+      (synthetic && key === "visceral_fat"
         ? syntheticFatSchema
         : patientShape[key]
       ).safeParse(selectedValues[key]).success,
@@ -146,7 +138,6 @@ function PredictForm() {
   }
   async function next() {
     const group = fields.filter((f) => f.group === step).map((f) => f.key);
-    if (step === 1) group.push("visceral_fat");
     if (await form.trigger(group)) {
       setStep(step + 1);
       setError("");
@@ -277,10 +268,24 @@ function PredictForm() {
                 e.preventDefault();
                 void next();
               } else {
-                void form.handleSubmit(submit)(e);
+                void form.handleSubmit(submit, (errors) => {
+                  const missing = fields.find(({ key }) => errors[key]);
+                  if (missing) setStep(missing.group);
+                })(e);
               }
             }}
           >
+            <div className="mobile-form-progress">
+              <span>
+                {completedFields.length} of {requiredFields.length} inputs
+                complete
+              </span>
+              <progress
+                value={completedFields.length}
+                max={requiredFields.length}
+                aria-label="Assessment inputs completed"
+              />
+            </div>
             <div className="form-title">
               <span className="overline">STEP {step + 1} OF 4</span>
               <h2 ref={formHeading} tabIndex={-1}>
@@ -308,7 +313,11 @@ function PredictForm() {
                   .map((f) => (
                     <ClinicalEntry
                       key={f.key}
-                      field={f}
+                      field={
+                        synthetic && f.key === "visceral_fat"
+                          ? { ...f, ...syntheticFatField }
+                          : f
+                      }
                       form={form}
                       value={selectedValues[f.key]}
                     />
@@ -337,58 +346,7 @@ function PredictForm() {
                 </div>
               </>
             )}
-            {(step === 1 || step === 3) && (
-              <div className="visceral-entry">
-                <label className="field">
-                  <span>
-                    Visceral fat index
-                    <small className="badge">
-                      {synthetic
-                        ? "Required"
-                        : example
-                          ? "Example value"
-                          : "Optional"}
-                    </small>
-                  </span>
-                  <input
-                    type="number"
-                    aria-describedby={`visceral-fat-help${form.formState.errors.visceral_fat ? " visceral-fat-error" : ""}`}
-                    aria-invalid={!!form.formState.errors.visceral_fat}
-                    min={synthetic ? syntheticFatField.min : 0}
-                    max={synthetic ? syntheticFatField.max : undefined}
-                    aria-required={synthetic}
-                    step="any"
-                    placeholder={
-                      synthetic
-                        ? "Enter an example index"
-                        : "Enter your device reading"
-                    }
-                    {...form.register("visceral_fat", {
-                      setValueAs: (value) =>
-                        value === "" ? undefined : Number(value),
-                    })}
-                  />
-                  <small className="field-help" id="visceral-fat-help">
-                    {synthetic
-                      ? `Use a simulated index from ${syntheticFatField.min} to ${syntheticFatField.max}.`
-                      : example
-                        ? "You can adjust this example index. It appears for reference in the result and PDF."
-                        : "Shown for reference in your assessment and PDF. Use the index reported by your device."}
-                  </small>
-                  {form.formState.errors.visceral_fat && (
-                    <span
-                      className="field-error"
-                      id="visceral-fat-error"
-                      role="alert"
-                    >
-                      {synthetic
-                        ? `Enter a simulated index from ${syntheticFatField.min} to ${syntheticFatField.max}.`
-                        : "Enter a finite, non-negative device index or leave blank."}
-                    </span>
-                  )}
-                </label>
-              </div>
-            )}
+            {step === 1 && <VisceralFatGuide />}
             <ErrorBox message={error} />
             <div className="form-actions">
               <Button
@@ -486,7 +444,7 @@ function PredictForm() {
             <details className="missing-records">
               <summary>
                 {requiredFields.length - completedFields.length
-                  ? `${requiredFields.length - completedFields.length} inputs still needed`
+                  ? `${requiredFields.length - completedFields.length} ${requiredFields.length - completedFields.length === 1 ? "input" : "inputs"} still needed`
                   : "All required inputs supplied"}
               </summary>
               <ul>
@@ -513,7 +471,7 @@ function PredictForm() {
             </h3>
             <p>
               {synthetic
-                ? "Visceral fat is one of 14 inputs in this simulation."
+                ? `Visceral fat is one of ${requiredFields.length} required inputs in this demo.`
                 : stepGuidance.text}
             </p>
             <details>
