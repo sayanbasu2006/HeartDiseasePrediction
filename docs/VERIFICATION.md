@@ -1,3 +1,9 @@
+## Visceral fat visual comparisons — production release, 18 Nov 2026
+
+Published reviewed application commit `c02dcc363238f52c00f9b6f1014bc884a43bbfba` to GitHub `main`. Production frontend: `dpl_2eAi4AM6hS1y4zD3zQu4SC9da3n2`; production API: `dpl_F34LLDLddR57mF8TAqcE2xikzNgt`. The public address is `https://cardiolens-ai.vercel.app`.
+
+Fourteen live checks passed through the public frontend: health, 14-input model contract, individual response curve, independently recalculated reference comparison, missing-index rejection, batch comparisons and incomplete-record rejection, standard three-page PDF, simulated response curve, simulated three-page PDF, 14-column upload template, distributions, global sensitivity, disabled shared server history, and visceral-fat timeline analysis. Browser verification completed the live Cleveland example and displayed the new comparison panel with index 28, reference index 18 and a -0.40 percentage-point model-score difference. These are experimental model responses to generated training indices.
+
 ## Visceral fat visual comparisons — local review, 18 Nov 2026
 
 Every standard, simulated and eligible batch prediction now includes a same-record visceral-fat comparison against the median of its model's development background records. Only the visceral-fat index changes. Regression checks verify reference and sampled-curve scores against independent predictions, zero difference at the reference index, consistency between individual and batch results, and the dedicated third PDF page. Training indices remain identified as generated; no model retraining or clinical thresholds were introduced.
