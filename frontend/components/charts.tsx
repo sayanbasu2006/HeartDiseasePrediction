@@ -58,11 +58,11 @@ export function Trend({
                     })
                 : (v) => `${Math.round(v * 100)}%`
             }
-            tick={{ fontSize: 13, fill: "var(--muted)" }}
+            tick={{ fontSize: 14, fontWeight: 500, fill: "var(--ink)" }}
           />
           <YAxis
             domain={time && !probability ? ["auto", "auto"] : [0, 1]}
-            tick={{ fontSize: 13, fill: "var(--muted)" }}
+            tick={{ fontSize: 14, fontWeight: 500, fill: "var(--ink)" }}
           />
           <Tooltip
             content={({ active, payload, label }: any) =>
@@ -95,7 +95,7 @@ export function Trend({
               dataKey={key}
               className={i === 1 ? "trend-secondary-line" : undefined}
               stroke={colors[i % 3]}
-              strokeWidth={i === 0 ? 1.5 : 2.5}
+              strokeWidth={i === 0 ? 2 : 2.5}
               dot={data.length < 15}
               isAnimationActive={false}
               connectNulls={false}
@@ -148,7 +148,7 @@ export function Distribution({
             <XAxis
               type="number"
               allowDecimals={false}
-              tick={{ fontSize: 12, fill: "var(--muted)" }}
+              tick={{ fontSize: 14, fontWeight: 500, fill: "var(--ink)" }}
             />
             <YAxis
               type="category"
@@ -158,7 +158,7 @@ export function Distribution({
                 const label = formatMeasurement(feature, v);
                 return label.length > 25 ? label.slice(0, 24) + "…" : label;
               }}
-              tick={{ fontSize: 12, fill: "var(--muted)" }}
+              tick={{ fontSize: 14, fontWeight: 500, fill: "var(--ink)" }}
             />
             <Tooltip
               labelFormatter={(v) => formatMeasurement(feature, v)}
@@ -188,9 +188,9 @@ export function Distribution({
           <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey="value"
-            tick={{ fontSize: 13, fill: "var(--muted)" }}
+            tick={{ fontSize: 14, fontWeight: 500, fill: "var(--ink)" }}
           />
-          <YAxis tick={{ fontSize: 13, fill: "var(--muted)" }} />
+          <YAxis tick={{ fontSize: 14, fontWeight: 500, fill: "var(--ink)" }} />
           <Tooltip
             contentStyle={{
               background: "var(--card)",

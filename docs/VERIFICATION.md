@@ -1,3 +1,9 @@
+## Website readability — 19 Nov 2026
+
+Raised the shared body size to 17px and moved compact labels and supporting text to a 14–16px scale using rem tokens. Navigation, form guidance, tables, model comparisons and visceral-fat explanations share the new scale. Chart ticks use 14px text. Strengthened secondary text in both monochrome themes, increased heading weights and added distinct form-control border colours. The narrow form stepper now uses two columns, and the desktop menu switches to its drawer before enlarged links collide.
+
+Browser checks covered all nine routes at 320, 768 and 1440 CSS pixels in light mode, and at 320 and 1440 pixels in dark mode. A 1280px navigation check and completed 14-input assessments with the hypothetical comparison expanded also passed. These views had no document horizontal overflow or sampled text contrast below 4.5:1. Main content labels and captions were at least 14px; the compact brand tagline retains a separate size. These checks concern rendered text and layout, rather than certification of the whole site against an accessibility standard.
+
 ## Neutral source naming and Annapurma demo dataset — 19 Nov 2026
 
 Replaced the former cohort name in application labels, example notices, PDF text, model-provenance descriptions and project documentation with neutral source-dataset or UCI Heart Disease wording. The data path constant is now `MAIN_DATASET`; the numerical dataset, source checksums, trained model and score contracts are unchanged. Official archive-member filenames remain in the source audit and verification script so original-source matching continues to work.

@@ -94,10 +94,10 @@ function FatIllustration() {
       />
       <circle cx="48" cy="39" r="2.4" fill="currentColor" />
       <circle cx="165" cy="95" r="2.4" fill="currentColor" />
-      <text x="7" y="10" fill="currentColor" fontSize="8">
+      <text x="7" y="12" fill="currentColor" fontSize="11">
         BENEATH THE SKIN
       </text>
-      <text x="166" y="149" fill="currentColor" fontSize="8">
+      <text x="233" y="149" textAnchor="end" fill="currentColor" fontSize="11">
         AROUND ORGANS
       </text>
     </svg>
@@ -178,7 +178,7 @@ function ResponseCurve({ effect }: { effect: VisceralFatEffect }) {
               type="number"
               dataKey="index"
               domain={["dataMin", "dataMax"]}
-              tick={{ fontSize: 11, fill: "var(--muted)" }}
+              tick={{ fontSize: 14, fontWeight: 500, fill: "var(--ink)" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: number) => Number(v.toFixed(1)).toString()}
@@ -186,7 +186,7 @@ function ResponseCurve({ effect }: { effect: VisceralFatEffect }) {
             <YAxis
               domain={[0, 10]}
               ticks={[0, 2.5, 5, 7.5, 10]}
-              tick={{ fontSize: 11, fill: "var(--muted)" }}
+              tick={{ fontSize: 14, fontWeight: 500, fill: "var(--ink)" }}
               tickLine={false}
               axisLine={false}
             />
