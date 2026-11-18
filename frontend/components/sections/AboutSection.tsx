@@ -30,14 +30,14 @@ export function AboutSection() {
         <Card>
           <h3>Where the data comes from</h3>
           <p>
-            The Cleveland file contains 303 records,{" "}
+            The UCI Heart Disease file contains 303 records,{" "}
             {assessmentInputCounts.required} model inputs, and a binary outcome.
             The visceral fat column contains generated indices used in training.
             One duplicate was removed before splitting the data.
           </p>
           <p>
             Category labels were verified by matching all supplied records to
-            the primary UCI Cleveland reference. Missing vessel and stress-test
+            the primary UCI Heart Disease reference. Missing vessel and stress-test
             entries are shown as “Not available” and cannot be used for a new
             assessment. The source outcome labels are reversed relative to the
             earlier display: the positive model class represents no recorded
@@ -112,7 +112,7 @@ export function AboutSection() {
         <h3>Designed for clarity. Honest about applicability.</h3>
         <p>
           CardioLens uses familiar clinical units and Indian English date
-          formatting. Its source dataset is the UCI Cleveland reference, not an
+          formatting. Its source dataset is the UCI Heart Disease reference, not an
           Indian validation cohort. The interface does not establish clinical
           applicability in India, and the platform has no hospital, government,
           or medical association affiliation.

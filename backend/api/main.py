@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.responses import Response, JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.middleware.cors import CORSMiddleware
-from backend.ml.data import CLEVELAND_DATASET, ROOT
+from backend.ml.data import MAIN_DATASET, ROOT
 from backend.schemas.clinical import (
     Patient,
     SyntheticPatient,
@@ -260,7 +260,7 @@ def report(patient: ReportRequest):
 def example():
     import pandas as pd
 
-    row = pd.read_csv(CLEVELAND_DATASET).iloc[0]
+    row = pd.read_csv(MAIN_DATASET).iloc[0]
     measurements = {field: float(row[field]) for field in FEATURES}
     generated_fields = []
     if row.get("visceral_fat_source") == "generated":
@@ -272,9 +272,9 @@ def example():
         "synthetic": False,
         "demonstration_only": True,
         "notice": (
-            "A Cleveland example record with a generated visceral fat index."
+            "A source-dataset example record with a generated visceral fat index."
             if generated_fields
-            else "A Cleveland example record used for demonstration."
+            else "A source-dataset example record used for demonstration."
         ),
     }
 

@@ -209,7 +209,7 @@ function PredictForm() {
               onClick={() => exampleLoad(false)}
               disabled={busy}
             >
-              Load Cleveland example <ArrowRight size={15} />
+              Load example record <ArrowRight size={15} />
             </Button>
             <Button
               variant="ghost"
@@ -228,7 +228,7 @@ function PredictForm() {
               <FlaskConical size={20} />
             </span>
             <div>
-              <h2>{synthetic ? "Model demonstration" : "Cleveland example"}</h2>
+              <h2>{synthetic ? "Model demonstration" : "Source-dataset example"}</h2>
               <p>
                 {synthetic
                   ? "Explore how visceral fat affects a score from generated records."

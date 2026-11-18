@@ -1,4 +1,4 @@
-"""Verify transformations against the primary UCI Cleveland source; never infer meanings from frequency."""
+"""Verify transformations against the primary UCI Heart Disease source; never infer meanings from frequency."""
 
 from pathlib import Path
 from io import BytesIO
@@ -10,7 +10,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 if __package__ in (None, ""):
     sys.path.insert(0, str(ROOT))
-from backend.ml.data import CLEVELAND_DATASET, observed_csv_bytes
+from backend.ml.data import MAIN_DATASET, observed_csv_bytes
 
 FEATURES = [
     "age",
@@ -35,7 +35,7 @@ def verify(archive):
     source = pd.read_csv(
         BytesIO(content), header=None, names=FEATURES + ["diagnosis"], na_values="?"
     )
-    observed = observed_csv_bytes(CLEVELAND_DATASET)
+    observed = observed_csv_bytes(MAIN_DATASET)
     local = pd.read_csv(BytesIO(observed)).reset_index(names="local_row")
     keys = ["age", "sex", "trestbps", "chol", "fbs", "thalach", "exang", "oldpeak"]
     matches = local.merge(

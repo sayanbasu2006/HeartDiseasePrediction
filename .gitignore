@@ -10,3 +10,5 @@ frontend/*.tsbuildinfo
 backend/*.sqlite*
 tmp/
 .DS_Store
+outputs/**/.build/
+outputs/**/.chart-data-*/

@@ -209,7 +209,7 @@ def make_report(result):
         story.extend(
             [
                 p("No independent clinical validation, including for the Indian population. Clinical findings require interpretation by a qualified clinician."),
-                p("User-supplied dataset: 303 source rows; one duplicate removed. Category and outcome meanings verified against the UCI Cleveland reference; small sample and no external clinical validation. The displayed model score refers to the source disease-present class, not personal clinical risk. Feature contributions are not causes."),
+                p("User-supplied dataset: 303 source rows; one duplicate removed. Category and outcome meanings verified against the UCI Heart Disease reference; small sample and no external clinical validation. The displayed model score refers to the source disease-present class, not personal clinical risk. Feature contributions are not causes."),
             ]
         )
     story.extend(p(x) for x in result["limitations"])

@@ -1,9 +1,9 @@
-"""Add reproducible example device indices to the Cleveland CSV."""
+"""Add reproducible example device indices to the UCI Heart Disease CSV."""
 
 from random import Random
 
 from backend.ml.data import (
-    CLEVELAND_DATASET,
+    MAIN_DATASET,
     GENERATED_FAT_SUFFIX,
     load_data,
     observed_csv_bytes,
@@ -14,7 +14,7 @@ from backend.schemas.clinical import SYNTHETIC_INDEX_MIN, SYNTHETIC_INDEX_MAX
 SEED = 20261117
 
 
-def add_reference_indices(path=CLEVELAND_DATASET):
+def add_reference_indices(path=MAIN_DATASET):
     header, *rows = observed_csv_bytes(path).splitlines(keepends=True)
     header_fields = header.rstrip(b"\r\n")
     enriched = [header_fields + GENERATED_FAT_SUFFIX + header[len(header_fields):]]

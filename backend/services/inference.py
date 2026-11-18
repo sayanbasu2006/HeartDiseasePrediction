@@ -3,7 +3,7 @@ import hashlib
 from functools import lru_cache
 from datetime import datetime, timezone
 import joblib, numpy as np, pandas as pd, sklearn
-from backend.ml.data import ROOT, CLEVELAND_DATASET, SYNTHETIC_MODEL
+from backend.ml.data import ROOT, MAIN_DATASET, SYNTHETIC_MODEL
 from backend.schemas.clinical import Patient, SyntheticPatient, FEATURES, SYNTHETIC_FEATURES, DISCLAIMER
 from backend.schemas.labels import AUDIT, field_label
 
@@ -22,7 +22,7 @@ def artifacts():
         raise RuntimeError(
             "The model dataset does not match the verified category dictionary."
         )
-    if meta["dataset"]["sha256"] != hashlib.sha256(CLEVELAND_DATASET.read_bytes()).hexdigest():
+    if meta["dataset"]["sha256"] != hashlib.sha256(MAIN_DATASET.read_bytes()).hexdigest():
         raise RuntimeError("The model and its 14-parameter training dataset do not match.")
     bundle = joblib.load(directory / "model.joblib")
     if bundle["features"] != FEATURES or meta["features"] != FEATURES:
@@ -136,7 +136,7 @@ def _predict(patient, a, m, *, with_explanation):
         definition = "Experimental classifier output for the source disease-present class. This percentage is not your personal medical risk and is not a clinically validated probability of present or future heart disease."
         warnings = [
             DISCLAIMER,
-            "Categories and outcome meanings were verified against the UCI Cleveland source. This model has no external clinical validation.",
+            "Categories and outcome meanings were verified against the UCI Heart Disease source. This model has no external clinical validation.",
         ]
         warnings.append("The training file's visceral fat indices are generated values. Measured visceral fat effects have not been validated.")
     for f in features:

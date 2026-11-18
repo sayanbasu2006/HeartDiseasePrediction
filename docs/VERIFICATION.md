@@ -1,14 +1,24 @@
+## Neutral source naming and Annapurma demo dataset — 19 Nov 2026
+
+Replaced the former cohort name in application labels, example notices, PDF text, model-provenance descriptions and project documentation with neutral source-dataset or UCI Heart Disease wording. The data path constant is now `MAIN_DATASET`; the numerical dataset, source checksums, trained model and score contracts are unchanged. Official archive-member filenames remain in the source audit and verification script so original-source matching continues to work.
+
+Created a separate, explicitly synthetic 100-person Tamil Nadu demonstration for the requested Annapurma Hospital label. The CSV and Excel workbook contain all 14 assessment inputs, fictional names, city/language context and artificial labels. Seed: 20261119. Every record validates against the current assessment schema. Names, hospital association, measurements and outcomes are invented; the cohort is not a clinical or population-calibrated hospital dataset and was not merged into the main training file.
+
+Files: `outputs/annapurma-tamil-100-20261119/`. Backend: 84 tests passed. Frontend: 9 regression tests and production build passed.
+
+Published frontend `dpl_7SB5ibFvkDiUmqWs4HZ7FCFSkyRC` and API `dpl_HS5p6V6TrqLx1GTkboJA9gvS2g7Q`. Both reached Ready. Live checks confirmed neutral example notices, inference limitations, metadata provenance and three-page PDF text; the main model remains `2.0-bb5ec8e04e` with 14 inputs. Browser inspection confirmed the new “Load example record” control. Standalone TypeScript checking passed. The 100-row CSV also passed the actual upload parser, clinical-column mapping and row validation; Excel export was visually checked with the data and codebook populated.
+
 ## Visceral fat visual comparisons — production release, 18 Nov 2026
 
 Published reviewed application commit `c02dcc363238f52c00f9b6f1014bc884a43bbfba` to GitHub `main`. Production frontend: `dpl_2eAi4AM6hS1y4zD3zQu4SC9da3n2`; production API: `dpl_F34LLDLddR57mF8TAqcE2xikzNgt`. The public address is `https://cardiolens-ai.vercel.app`.
 
-Fourteen live checks passed through the public frontend: health, 14-input model contract, individual response curve, independently recalculated reference comparison, missing-index rejection, batch comparisons and incomplete-record rejection, standard three-page PDF, simulated response curve, simulated three-page PDF, 14-column upload template, distributions, global sensitivity, disabled shared server history, and visceral-fat timeline analysis. Browser verification completed the live Cleveland example and displayed the new comparison panel with index 28, reference index 18 and a -0.40 percentage-point model-score difference. These are experimental model responses to generated training indices.
+Fourteen live checks passed through the public frontend: health, 14-input model contract, individual response curve, independently recalculated reference comparison, missing-index rejection, batch comparisons and incomplete-record rejection, standard three-page PDF, simulated response curve, simulated three-page PDF, 14-column upload template, distributions, global sensitivity, disabled shared server history, and visceral-fat timeline analysis. Browser verification completed the live Source-dataset example and displayed the new comparison panel with index 28, reference index 18 and a -0.40 percentage-point model-score difference. These are experimental model responses to generated training indices.
 
 ## Visceral fat visual comparisons — local review, 18 Nov 2026
 
 Every standard, simulated and eligible batch prediction now includes a same-record visceral-fat comparison against the median of its model's development background records. Only the visceral-fat index changes. Regression checks verify reference and sampled-curve scores against independent predictions, zero difference at the reference index, consistency between individual and batch results, and the dedicated third PDF page. Training indices remain identified as generated; no model retraining or clinical thresholds were introduced.
 
-Backend: 84 tests passed. Frontend: 9 tests, type checking and production build passed. The local browser completed the Cleveland example and displayed the dedicated response curve, paired score bars and report-preview summary. The insights panel was inspected in desktop and narrow phone layouts and in both themes, with no document horizontal overflow or browser errors in those checks. All three PDF pages were rendered and visually inspected. Local preview services run at `http://127.0.0.1:3000` and `http://127.0.0.1:8000`. Nothing from this change has been committed, pushed or deployed.
+Backend: 84 tests passed. Frontend: 9 tests, type checking and production build passed. The local browser completed the Source-dataset example and displayed the dedicated response curve, paired score bars and report-preview summary. The insights panel was inspected in desktop and narrow phone layouts and in both themes, with no document horizontal overflow or browser errors in those checks. All three PDF pages were rendered and visually inspected. Local preview services run at `http://127.0.0.1:3000` and `http://127.0.0.1:8000`. Nothing from this change has been committed, pushed or deployed.
 
 ## Full workflow and responsive review — 18 Nov 2026
 
@@ -26,17 +36,17 @@ Both services were published to production: frontend `dpl_BcyNwHDpFs2BBqtJ9ajv52
 
 ## Age comparison interpretation — 18 Nov 2026
 
-Reproduced the reported Cleveland example using model `2.0-bb5ec8e04e`: changing only age from 63 to 76 changes the disease-present class score from 49.6123% to 48.7555%. This is the fitted, unconstrained classifier's response; the API and UI use the same disease-present class, without score inversion or a manually added age adjustment. The development age range is 29–77 years.
+Reproduced the reported Source-dataset example using model `2.0-bb5ec8e04e`: changing only age from 63 to 76 changes the disease-present class score from 49.6123% to 48.7555%. This is the fitted, unconstrained classifier's response; the API and UI use the same disease-present class, without score inversion or a manually added age adjustment. The development age range is 29–77 years.
 
 The hypothetical explorer now explains that it compares records rather than estimating the effects of aging, and explicitly identifies a lower score after an age-only increase. A version mismatch blocks comparisons between an existing result and a newly deployed model. A regression check verifies age-specific API scores against the fitted model's class-0 probabilities. All 80 backend tests and frontend type checking passed.
 
-Published the frontend update and verified it in the production browser: loaded the Cleveland example, ran its assessment and changed the age slider from 63 to 76. The displayed scores match the fitted model and the age-decrease explanation appears. Screenshot: `/private/tmp/cardiolens-age-comparison.jpg`.
+Published the frontend update and verified it in the production browser: loaded the Source-dataset example, ran its assessment and changed the age slider from 63 to 76. The displayed scores match the fitted model and the age-decrease explanation appears. Screenshot: `/private/tmp/cardiolens-age-comparison.jpg`.
 
 ## Required visceral fat integration — 18 Nov 2026
 
 The main classifier now requires all 14 inputs. Visceral fat enters every candidate model's continuous preprocessing, the selected model's predictions, feature explanations and the measurement review. Form submission, batch classification, explanations and reports reject omitted, blank, null and nonfinite indices. The timeline continues to represent only readings actually available at each timestamp.
 
-The dataset contains the original 303 Cleveland records with the previously generated visceral-fat indices. Its metadata retains the observed-field checksum and full-file checksum. The field provenance records the generated indices.
+The dataset contains the original 303 UCI Heart Disease records with the previously generated visceral-fat indices. Its metadata retains the observed-field checksum and full-file checksum. The field provenance records the generated indices.
 
 The selected model is Calibrated OOF voting, version `2.0-bb5ec8e04e`. The fixed split contains 241 development and 61 holdout records. Holdout accuracy is 80.33%, ROC-AUC is 0.8918, and the confusion matrix is `[[20, 8], [4, 29]]`. All metrics are calculated from the retrained model.
 
@@ -106,8 +116,8 @@ python -m backend.ml.evaluate_visceral_fat \
   ~/Downloads/CardioLens_Visceral_Fat_319_Real_Records.csv
 ```
 
-## Cleveland example indices
+## Source-dataset example indices
 
-The main Cleveland CSV includes a seeded example index for each of its 303 rows. Duplicate records receive the same index. The `visceral_fat_source` column records how the index was filled. The original values and outcomes reproduce the verified checksum.
+The main UCI Heart Disease CSV includes a seeded example index for each of its 303 rows. Duplicate records receive the same index. The `visceral_fat_source` column records how the index was filled. The original values and outcomes reproduce the verified checksum.
 
-A fixed logistic-regression comparison reused the existing 241 development records and 61 holdout records. Accuracy was 85.25% with the observed inputs and 83.61% when the generated index was included. The index appears in the Cleveland example, its result and PDF as a reference value.
+A fixed logistic-regression comparison reused the existing 241 development records and 61 holdout records. Accuracy was 85.25% with the observed inputs and 83.61% when the generated index was included. The index appears in the Source-dataset example, its result and PDF as a reference value.

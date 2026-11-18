@@ -1,13 +1,13 @@
 import pytest
 import pandas as pd
 from pydantic import ValidationError
-from backend.ml.data import CLEVELAND_DATASET, load_data
+from backend.ml.data import MAIN_DATASET, load_data
 from backend.schemas.clinical import Measurement
 from backend.schemas.labels import AUDIT
 
 
-def test_cleveland_csv_and_example_carry_generated_index_provenance(client):
-    records = pd.read_csv(CLEVELAND_DATASET)
+def test_source_csv_and_example_carry_generated_index_provenance(client):
+    records = pd.read_csv(MAIN_DATASET)
     assert len(records) == 303
     assert records.visceral_fat.between(1, 31).all()
     assert records.visceral_fat_source.eq("generated").all()

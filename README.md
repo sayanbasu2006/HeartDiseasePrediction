@@ -1,8 +1,8 @@
 # CardioLens AI
 
-A new local web application with a Next.js / React frontend and a FastAPI machine-learning backend. The former CardioScope Qt desktop application, Mac bundle, launchers, old source, and old artifacts have been removed from this workspace. A recovery archive was created at `/private/tmp/cardioscope-before-cardiolens-20261103.tar.gz`; temporary storage may be cleared by the OS. The working Cleveland dataset is in `backend/data/heart.csv`.
+A new local web application with a Next.js / React frontend and a FastAPI machine-learning backend. The former CardioScope Qt desktop application, Mac bundle, launchers, old source, and old artifacts have been removed from this workspace. A recovery archive was created at `/private/tmp/cardioscope-before-cardiolens-20261103.tar.gz`; temporary storage may be cleared by the OS. The working UCI Heart Disease dataset is in `backend/data/heart.csv`.
 
-This is an educational research platform, not a diagnosis, treatment tool, or clinically validated cardiovascular event risk calculator. Feature and outcome meanings were verified against the primary UCI Cleveland reference by matching all 303 supplied rows. The app uses plain-language choices and preserves numeric model inputs internally. The saved positive class (`target=1`) corresponds to no recorded disease in the source; `target=0` corresponds to disease present. Results now describe these source dataset patterns and cannot diagnose a person.
+This is an educational research platform, not a diagnosis, treatment tool, or clinically validated cardiovascular event risk calculator. Feature and outcome meanings were verified against the primary UCI Heart Disease reference by matching all 303 supplied rows. The app uses plain-language choices and preserves numeric model inputs internally. The saved positive class (`target=1`) corresponds to no recorded disease in the source; `target=0` corresponds to disease present. Results now describe these source dataset patterns and cannot diagnose a person.
 
 ## Run locally
 
@@ -40,6 +40,8 @@ Open [CardioLens AI](http://127.0.0.1:3000). API schema: [FastAPI docs](http://1
 
 ## Dataset and training
 
+A separate [100-person Annapurma Hospital Tamil Nadu demo](outputs/annapurma-tamil-100-20261119/DATASET_README.md) is available as CSV and Excel. It contains fictional people and generated measurements with all 14 inputs. It is not a real hospital cohort and is separate from the main model's training data.
+
 The source CSV contains 303 rows, 165 positive labels, 138 negative labels, and one duplicate. The main model requires 14 inputs, including the visceral fat device index. Five records contain `ca=4`; two contain `thal=0`. These are missing-value markers. Training retains those historical records, while new assessments require supported findings. `fbs` indicates whether fasting blood sugar exceeded 120 mg/dL.
 
 The main CSV carries a reproducible index in `visceral_fat` with `visceral_fat_source=generated`. All 14 features enter preprocessing, fitting, explanations, distributions and prediction. The original source fields and outcome retain their audited checksum. The model metadata records the generated index's provenance and the full training-file checksum. To regenerate those indices, run `python -m backend.ml.add_visceral_fat`.
@@ -57,7 +59,7 @@ The default is `python -m backend.ml.train` for an empty `backend/artifacts` dir
 
 On `/predict`, choose **Explore the model demo**. Adjust the generated inputs, including the visceral-fat device index, and choose **Run model demo**. The result shows the simulated score, feature contributions, a visceral-fat slider, and a PDF with the data source.
 
-The [generated CSV](backend/data/synthetic_visceral_fat.csv) contains 3,200 training records and 800 independently generated holdout records. A logistic regression model achieved **94.25% accuracy on the synthetic holdout**, compared with **74.75%** for the same model trained without visceral fat. The simulation explicitly uses visceral fat to generate the artificial labels. These figures measure how well the models reproduce that rule. The standard Cleveland assessment uses its own dataset, model, and evaluation.
+The [generated CSV](backend/data/synthetic_visceral_fat.csv) contains 3,200 training records and 800 independently generated holdout records. A logistic regression model achieved **94.25% accuracy on the synthetic holdout**, compared with **74.75%** for the same model trained without visceral fat. The simulation explicitly uses visceral fat to generate the artificial labels. These figures measure how well the models reproduce that rule. The standard UCI Heart Disease assessment uses its own dataset, model, and evaluation.
 
 Reproduce the synthetic dataset and model from the project root.
 
@@ -99,7 +101,7 @@ The confusion matrix is `[[20, 8], [4, 29]]`, with rows actual and columns predi
 
 - `/`: responsive landing page, animated ECG / heart, local privacy context.
 - `/dashboard`: completed assessments, stored measurement summaries and trends, and reviewed uploads. Empty states appear when there is no data.
-- `/predict`: four-step required-input form. For a presentation, explicitly click **Load Cleveland example**. The record overlaps source training data and is clearly labeled; it must not be presented as evidence of generalization. Review then run the actual API. Explanation contributions are approximate interventional Shapley values, with a deterministic seed and score-space additivity. Hybrid background records can be unrealistic because of correlations.
+- `/predict`: four-step required-input form. For a presentation, explicitly click **Load example record**. The record overlaps source training data and is clearly labeled; it must not be presented as evidence of generalization. Review then run the actual API. Explanation contributions are approximate interventional Shapley values, with a deterministic seed and score-space additivity. Hybrid background records can be unrealistic because of correlations.
 - On a result, change sliders in **What if?**; debounced requests compute real hypothetical model outputs. Reset restores the supplied record. No causal or treatment claim is made.
 - `/upload`: drop CSV/JSON, select prediction or monitoring mode, confirm editable column mappings and units, edit preview cells, then analyze. All 1,000 allowed records can be reviewed in ten-row pages. Missing and out-of-range cells are highlighted; backend validation is authoritative. Eligible batch records receive predictions; unsupported records receive errors. Search, sort, and export results as CSV. The template contains readable measurement headers only, so no patient measurements are invented. Category columns accept plain-language values such as Male, Female, Yes, Typical angina and Normal ECG. Original numeric inputs remain supported internally, except verified missing-test markers, which now cause abstention.
 - For monitoring uploads, use `timestamp` (ISO 8601 with timezone), optional `heart_rate`, `systolic`, `diastolic`, `cholesterol`, `visceral_fat`. Blank unmeasured fields remain absent. Resting heart rate never substitutes for `thalach`. Saving readings to measurement history requires separate consent on the timeline.

@@ -5,7 +5,7 @@ import pandas as pd
 from backend.schemas.clinical import FEATURES, OBSERVED_FEATURES, CATEGORIES
 
 ROOT = Path(__file__).resolve().parents[1]
-CLEVELAND_DATASET = ROOT / "data/heart.csv"
+MAIN_DATASET = ROOT / "data/heart.csv"
 GENERATED_FAT_SUFFIX = b",visceral_fat,visceral_fat_source"
 SYNTHETIC_DATASET = ROOT / "data/synthetic_visceral_fat.csv"
 SYNTHETIC_MODEL = ROOT / "artifacts/synthetic_visceral_fat.joblib"
@@ -23,7 +23,7 @@ def write_atomically(path, write):
 
 
 def observed_csv_bytes(path):
-    """Recover the original, checksummed Cleveland columns from the enriched CSV."""
+    """Recover the original, checksummed UCI Heart Disease columns from the enriched CSV."""
     content = Path(path).read_bytes()
     if not content.split(b"\n", 1)[0].rstrip(b"\r").endswith(GENERATED_FAT_SUFFIX):
         return content
@@ -32,12 +32,12 @@ def observed_csv_bytes(path):
         row = line.rstrip(b"\r\n")
         columns = row.rsplit(b",", 2)
         if len(columns) != 3:
-            raise ValueError("Malformed Cleveland CSV with generated visceral fat.")
+            raise ValueError("Malformed UCI Heart Disease CSV with generated visceral fat.")
         observed.append(columns[0] + line[len(row):])
     return b"".join(observed)
 
 
-def load_data(path=CLEVELAND_DATASET):
+def load_data(path=MAIN_DATASET):
     source = observed_csv_bytes(path)
     raw = pd.read_csv(path)
     if set(raw.columns) not in (
@@ -70,9 +70,9 @@ def load_data(path=CLEVELAND_DATASET):
             "thal=0": int((raw.thal == 0).sum()),
         },
         "feature_provenance": {
-            **{feature: "UCI Cleveland record" for feature in OBSERVED_FEATURES},
+            **{feature: "UCI Heart Disease record" for feature in OBSERVED_FEATURES},
             "visceral_fat": "Generated device index, seed 20261117",
         },
-        "provenance": "Cleveland records and verified source outcomes with a generated visceral-fat index. All 14 inputs enter the research model.",
+        "provenance": "UCI Heart Disease records and verified source outcomes with a generated visceral-fat index. All 14 inputs enter the research model.",
     }
     return clean, audit
