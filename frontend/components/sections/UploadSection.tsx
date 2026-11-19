@@ -10,6 +10,7 @@ import {
   Download,
   Search,
   Loader2,
+  TriangleAlert,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
@@ -650,45 +651,76 @@ export function UploadSection() {
                 </tr>
               </thead>
               <tbody>
-                {displayResults.map((r: any) => (
-                  <tr key={r.row}>
-                    <td>{r.row}</td>
-                    <td>
-                      <span className={`badge ${r.eligible ? "" : "warning"}`}>
-                        {r.eligible ? "Scored" : "Needs review"}
-                      </span>
-                    </td>
-                    <td>
-                      {r.result
-                        ? `${(diseaseScore(r.result) * 10).toFixed(2)} / 10`
-                        : "—"}
-                    </td>
-                    <td>{r.result?.measurements.visceral_fat ?? "—"}</td>
-                    <td>
-                      {r.result?.visceral_fat_effect ? (
-                        <details className="vf-batch-detail">
-                          <summary>
-                            {formatFatDifference(
-                              r.result.visceral_fat_effect.difference,
-                            )}{" "}
-                            pp
-                          </summary>
-                          <VisceralFatSummary result={r.result} />
-                        </details>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td>
-                      {r.result?.label ||
-                        r.errors
-                          .map(
-                            (e: any) => `${fieldLabel(e.field)}: ${e.message}`,
-                          )
-                          .join(" · ")}
-                    </td>
-                  </tr>
-                ))}
+                {displayResults.map((r: any) => {
+                  const diseasePattern =
+                    r.eligible &&
+                    r.result?.synthetic !== true &&
+                    r.result?.predicted_class === 0;
+                  return (
+                    <tr
+                      key={r.row}
+                      className={
+                        diseasePattern ? "batch-pattern-row" : undefined
+                      }
+                    >
+                      <td>{r.row}</td>
+                      <td>
+                        <span
+                          className={`badge ${
+                            diseasePattern
+                              ? "batch-pattern-badge"
+                              : r.eligible
+                                ? ""
+                                : "warning"
+                          }`}
+                        >
+                          {diseasePattern && (
+                            <TriangleAlert size={16} aria-hidden="true" />
+                          )}
+                          {diseasePattern
+                            ? "Disease-present pattern"
+                            : r.eligible
+                              ? "Scored"
+                              : "Needs review"}
+                        </span>
+                      </td>
+                      <td
+                        className={
+                          diseasePattern ? "batch-pattern-score" : undefined
+                        }
+                      >
+                        {r.result
+                          ? `${(diseaseScore(r.result) * 10).toFixed(2)} / 10`
+                          : "—"}
+                      </td>
+                      <td>{r.result?.measurements.visceral_fat ?? "—"}</td>
+                      <td>
+                        {r.result?.visceral_fat_effect ? (
+                          <details className="vf-batch-detail">
+                            <summary>
+                              {formatFatDifference(
+                                r.result.visceral_fat_effect.difference,
+                              )}{" "}
+                              pp
+                            </summary>
+                            <VisceralFatSummary result={r.result} />
+                          </details>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td>
+                        {r.result?.label ||
+                          r.errors
+                            .map(
+                              (e: any) =>
+                                `${fieldLabel(e.field)}: ${e.message}`,
+                            )
+                            .join(" · ")}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

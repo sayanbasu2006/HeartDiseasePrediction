@@ -1,3 +1,9 @@
+## Batch pattern highlighting and dataset display — 19 Nov 2026
+
+Eligible batch records with returned main-model `predicted_class=0` now have a persistent row tint, side marker, bold score and a labelled disease-present-pattern badge. Class 1 records, simulated outputs and invalid rows do not receive that highlight. The model class, scores and CSV export columns are unchanged. A three-record browser preview confirmed one disease-present row, one no-disease row and an incomplete visceral-fat record, with readable badges in both themes.
+
+The About page uses “Annapurna dataset” as a project display name and reads its 302-record modelling count from metadata. The original source-reference information remains in the same section. The production build and TypeScript compilation passed.
+
 ## Website readability — 19 Nov 2026
 
 Raised the shared body size to 17px and moved compact labels and supporting text to a 14–16px scale using rem tokens. Navigation, form guidance, tables, model comparisons and visceral-fat explanations share the new scale. Chart ticks use 14px text. Strengthened secondary text in both monochrome themes, increased heading weights and added distinct form-control border colours. The narrow form stepper now uses two columns, and the desktop menu switches to its drawer before enlarged links collide.

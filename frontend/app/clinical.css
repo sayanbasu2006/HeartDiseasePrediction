@@ -1510,6 +1510,32 @@ p {
 .clinical-site .selected-row {
   background: var(--teal-soft);
 }
+.table-wrap tbody tr.batch-pattern-row {
+  background: var(--teal-soft);
+}
+.table-wrap tbody tr.batch-pattern-row:hover {
+  background: color-mix(in srgb, var(--ink) 12%, var(--card));
+}
+.clinical-site .batch-pattern-row > td:first-child {
+  border-inline-start: 4px solid var(--ink);
+  font-weight: 700;
+}
+.batch-pattern-row .batch-pattern-score {
+  font-weight: 700;
+}
+.badge.batch-pattern-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 180px;
+  background: var(--ink);
+  color: var(--action-ink);
+  border: 1px solid var(--ink);
+  font-weight: 700;
+}
+.batch-pattern-badge svg {
+  flex-shrink: 0;
+}
 .table-wrap td input,
 .table-wrap td select {
   min-width: 155px;
