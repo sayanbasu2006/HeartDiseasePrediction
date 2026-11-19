@@ -315,7 +315,11 @@ export function ModelsSection() {
             />
           </div>
         )}
-        <p>{info.data?.dataset.provenance}</p>
+        <p>
+          <strong>Annapurna Patient Records</strong> is the project’s dataset
+          label. It includes verified source outcomes and a generated
+          visceral-fat index. All 14 inputs enter the research model.
+        </p>
         <p className="caption">
           Missing vessel readings: {info.data?.dataset.unusual_codes["ca=4"]}{" "}
           records. Missing stress-test results:{" "}
