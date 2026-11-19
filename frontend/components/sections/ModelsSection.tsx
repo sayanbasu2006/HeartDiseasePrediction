@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Database,
-  Check,
   FlaskConical,
   SlidersHorizontal,
   CheckCircle2,
@@ -295,18 +294,12 @@ export function ModelsSection() {
           </Link>
         </div>
         {info.data && (
-          <div className="grid four">
+          <div className="grid three">
             <Stat
-              title="Source rows"
-              value={info.data.dataset.raw_rows}
-              sub="User-provided CSV"
+              title="Modelling records"
+              value={info.data.dataset.rows}
+              sub="Records used for development and evaluation"
               icon={Database}
-            />
-            <Stat
-              title="Duplicate removed"
-              value={info.data.dataset.duplicates_removed}
-              sub="Before splitting"
-              icon={Check}
             />
             <Stat
               title="Development rows"
